@@ -201,7 +201,13 @@ export default function JoinPage({
           />
         )}
         {screen === 'finding' && (
-          <FindingScreen you={you} onDone={() => { /* driven by polling */ }} />
+          <FindingScreen you={you} onDone={() => { /* driven by polling */ }} onRestart={() => {
+            localStorage.removeItem(`nexmeet:token:${slug}`);
+            setAuthToken(null);
+            setYou({ name: '', email: '', responses: {} });
+            setMatches([]);
+            setScreen('form');
+          }} />
         )}
         {(screen === 'matches' || screen === 'map') && (
           <div
@@ -231,7 +237,13 @@ export default function JoinPage({
                   }}
                   onMap={() => setScreen('map')}
                   onRefresh={() => fetchMatches(authToken!)}
-                  onRestart={() => router.push(`/e/${slug}`)}
+                  onRestart={() => {
+                    localStorage.removeItem(`nexmeet:token:${slug}`);
+                    setAuthToken(null);
+                    setYou({ name: '', email: '', responses: {} });
+                    setMatches([]);
+                    setScreen('form');
+                  }}
                 />
               )}
               {screen === 'map' && (

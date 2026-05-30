@@ -6,9 +6,10 @@ import Avatar from '@/components/ui/Avatar';
 interface FindingScreenProps {
   you: { name: string };
   onDone: () => void;
+  onRestart?: () => void;
 }
 
-export default function FindingScreen({ you, onDone }: FindingScreenProps) {
+export default function FindingScreen({ you, onDone, onRestart }: FindingScreenProps) {
   return (
     <div className="scroll screen-enter" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       
@@ -58,6 +59,12 @@ export default function FindingScreen({ you, onDone }: FindingScreenProps) {
             Feel free to close this page. We&apos;ll let you know when it&apos;s done.
           </div>
         </div>
+
+        {onRestart && (
+          <button onClick={onRestart} style={{ marginTop: 32, fontSize: 13.5, fontWeight: 600, color: "var(--ink-3)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 4 }}>
+            Not you? Register someone else.
+          </button>
+        )}
       </div>
 
     </div>
