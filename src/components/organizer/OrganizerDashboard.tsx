@@ -289,62 +289,76 @@ export default function OrganizerDashboard({ eventId, onExit, onNewEvent, onHome
             <span style={{ fontSize: 13, color: "var(--ink-3)", fontWeight: 600 }}>{count} total</span>
           </div>
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 540 }}>
-              <thead>
-                <tr style={{ textAlign: "left", color: "var(--ink-3)", fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em" }}>
-                  <th style={{ padding: "8px 10px", fontWeight: 800 }}>Name</th>
-                  {(eventData?.formFields || []).slice(0, 3).map((f: any) => (
-                    <th key={f.id} style={{ padding: "8px 10px", fontWeight: 800 }}>{f.question}</th>
-                  ))}
-                  {(!eventData?.formFields || eventData.formFields.length === 0) && (
-                    <>
-                      <th style={{ padding: "8px 10px", fontWeight: 800 }}>Role</th>
-                      <th style={{ padding: "8px 10px", fontWeight: 800 }}>Looking for</th>
-                      <th style={{ padding: "8px 10px", fontWeight: 800 }}>Skills</th>
-                    </>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {attendees.map((p) => (
-                  <tr key={p.id} style={{ borderTop: "1px solid var(--line)" }}>
-                    <td style={{ padding: "12px 10px" }}>
-                      <div className="row gap10" style={{ alignItems: "center" }}>
-                        <Avatar name={p.name} color="var(--accent)" size={32} />
-                        <span style={{ fontWeight: 700, fontSize: 14 }}>{p.name}</span>
-                      </div>
-                    </td>
-                    {(eventData?.formFields || []).slice(0, 3).map((f: any) => (
-                      <td key={f.id} style={{ padding: "12px 10px", fontSize: 13.5, color: "var(--ink-2)", maxWidth: 200, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {p.responses?.[f.id] || '—'}
-                      </td>
-                    ))}
-                    {(!eventData?.formFields || eventData.formFields.length === 0) && (
-                      <>
-                        <td style={{ padding: "12px 10px", fontSize: 13.5, color: "var(--ink-2)" }}>{p.responses?.role || '—'}</td>
+            {(() => {
+              // form_fields from API (snake_case). Exclude base identity fields — they're
+              // stored as top-level columns, not in responses.
+              const BASE_IDS = new Set(['name', 'email', 'phone']);
+              const formFields: any[] = (eventData?.form_fields || [])
+                .filter((f: any) => f.id && f.question && !BASE_IDS.has(f.id))
+                .slice(0, 4);
+
+              // Derive columns from actual response keys when no form_fields available.
+              const responseKeys: string[] = formFields.length === 0
+                ? Array.from(
+                    new Set(attendees.flatMap(a => Object.keys(a.responses || {})))
+                  ).filter(k => !BASE_IDS.has(k)).slice(0, 4)
+                : [];
+
+              const cols = formFields.length > 0
+                ? formFields.map((f: any) => ({ id: f.id, label: f.question }))
+                : responseKeys.map(k => ({ id: k, label: k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) }));
+
+              return (
+                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 540 }}>
+                  <thead>
+                    <tr style={{ textAlign: "left", color: "var(--ink-3)", fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em" }}>
+                      <th style={{ padding: "8px 10px", fontWeight: 800 }}>Name</th>
+                      {cols.map(c => (
+                        <th key={c.id} style={{ padding: "8px 10px", fontWeight: 800 }}>{c.label}</th>
+                      ))}
+                      {cols.length === 0 && (
+                        <th style={{ padding: "8px 10px", fontWeight: 800, color: "var(--ink-4)" }}>Responses</th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attendees.map((p, i) => (
+                      <tr key={p.id} style={{ borderTop: "1px solid var(--line)" }}>
                         <td style={{ padding: "12px 10px" }}>
-                          <span style={{ fontSize: 12.5, fontWeight: 700, padding: "4px 10px", borderRadius: 999, background: "color-mix(in srgb, var(--accent) 12%, transparent)", color: "var(--accent)" }}>
-                            {p.responses?.looking || '—'}
-                          </span>
-                        </td>
-                        <td style={{ padding: "12px 10px" }}>
-                          <div className="row gap6">
-                            {(p.responses?.skills?.split(',') || []).slice(0, 2).map((s: string) => (
-                              <span key={s} style={{ fontSize: 12, color: "var(--ink-3)", padding: "3px 8px", border: "1px solid var(--card-edge)", borderRadius: 999 }}>{s}</span>
-                            ))}
+                          <div className="row gap10" style={{ alignItems: "center" }}>
+                            <Avatar name={p.name} color={AV[i % AV.length]} size={32} />
+                            <div>
+                              <div style={{ fontWeight: 700, fontSize: 14 }}>{p.name}</div>
+                              <div style={{ fontSize: 12, color: "var(--ink-3)" }}>{p.email}</div>
+                            </div>
                           </div>
                         </td>
-                      </>
+                        {cols.map(c => {
+                          const val = p.responses?.[c.id];
+                          return (
+                            <td key={c.id} style={{ padding: "12px 10px", fontSize: 13.5, color: "var(--ink-2)", maxWidth: 220 }}>
+                              {val ? (
+                                <span style={{ display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{val}</span>
+                              ) : (
+                                <span style={{ color: "var(--ink-4)" }}>—</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                        {cols.length === 0 && (
+                          <td style={{ padding: "12px 10px", fontSize: 13, color: "var(--ink-3)" }}>No responses</td>
+                        )}
+                      </tr>
+                    ))}
+                    {attendees.length === 0 && (
+                      <tr>
+                        <td colSpan={cols.length + 1} style={{ padding: 20, textAlign: 'center', color: 'var(--ink-3)' }}>No attendees yet</td>
+                      </tr>
                     )}
-                  </tr>
-                ))}
-                {attendees.length === 0 && (
-                  <tr>
-                    <td colSpan={4} style={{ padding: 20, textAlign: 'center', color: 'var(--ink-3)' }}>No attendees yet</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  </tbody>
+                </table>
+              );
+            })()}
           </div>
         </div>
       </div>

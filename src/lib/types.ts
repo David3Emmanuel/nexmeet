@@ -61,6 +61,43 @@ export interface Match {
   attendeeBId: string
 }
 
+/** Match pair as returned by GET /api/events/:id/matches */
+export interface MatchPair {
+  id: string
+  attendee_a_id: string
+  attendee_a_name: string
+  attendee_b_id: string
+  attendee_b_name: string
+  reason: string | null
+}
+
+/** Attendee row as returned by GET /api/events/:id/attendees */
+export interface AttendeeRow {
+  id: string
+  name: string
+  email: string
+  phone: string | null
+  responses: Record<string, string>
+  lat: number | null
+  lng: number | null
+  updated_at: string
+}
+
+/** Event data as returned by GET /api/events/:id */
+export interface EventData {
+  id: string
+  title: string
+  about: string | null
+  image_url: string | null
+  form_fields: FormQuestion[]
+  theme_config: ThemeConfig | null
+  match_times: string[]
+  matched: boolean
+  short_code: string | null
+  date: string | null
+  venue: string | null
+}
+
 export interface Location {
   lat: number
   lng: number

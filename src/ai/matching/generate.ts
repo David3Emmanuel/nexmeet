@@ -3,8 +3,29 @@ import { ai } from "../clients";
 import { MatchAttendee, FormQuestion, MatchResult, AttendeeMatch } from "@/lib/types";
 import { buildMatchPrompt, buildReasonPrompt } from "./prompts";
 
-const CONCURRENCY = 15;
-const SAFETY_MAX = 10; // runaway guard only, NOT a quality cap — AI decides the count
+const CONCURRENCY = 4;  // stay well under Gemini free-tier RPM
+const SAFETY_MAX = 10;  // runaway guard only, NOT a quality cap — AI decides the count
+
+// Exponential backoff retry — handles 429 rate-limit responses from Gemini.
+async function withRetry<T>(fn: () => Promise<T>, attempts = 4): Promise<T> {
+  let delay = 1000;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      const is429 =
+        err?.status === 429 ||
+        err?.message?.includes('429') ||
+        err?.message?.toLowerCase().includes('quota') ||
+        err?.message?.toLowerCase().includes('rate');
+      if (!is429 || i === attempts - 1) throw err;
+      console.warn(`[Gemini] 429 rate limit — retrying in ${delay}ms (attempt ${i + 1}/${attempts})`);
+      await new Promise(res => setTimeout(res, delay));
+      delay *= 2;
+    }
+  }
+  throw new Error('unreachable');
+}
 
 // Runs an async fn over items in concurrency-limited batches.
 async function runBatched<T, R>(
@@ -31,7 +52,7 @@ async function matchOne(
 
   const validIds = new Set(candidates.map((c) => c.id));
 
-  const response = await ai.models.generateContent({
+  const response = await withRetry(() => ai.models.generateContent({
     model: "gemini-2.5-flash",
     contents: buildMatchPrompt(focal, candidates, questions, target),
     config: {
@@ -50,7 +71,7 @@ async function matchOne(
         },
       },
     },
-  });
+  }));
 
   let raw: AttendeeMatch[] = [];
   try {
@@ -86,7 +107,7 @@ async function generateReason(
   target: MatchAttendee,
   questions: FormQuestion[]
 ): Promise<string> {
-  const response = await ai.models.generateContent({
+  const response = await withRetry(() => ai.models.generateContent({
     model: "gemini-2.5-flash",
     contents: buildReasonPrompt(owner, target, questions),
     config: {
@@ -97,7 +118,7 @@ async function generateReason(
         required: ["reason"],
       },
     },
-  });
+  }));
   let parsed = { reason: '' };
   try {
     const text = response.text?.replace(/```json\n?/g, '').replace(/```\n?/g, '') ?? "{}";

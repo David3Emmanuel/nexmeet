@@ -13,21 +13,78 @@ function shuffle<T>(arr: T[]): T[] {
   return a
 }
 
-/**
- * Random fallback: pair attendees sequentially after shuffling.
- * Every pair is mutual — if A is matched to B, B is matched to A.
- * The last attendee is unmatched when the count is odd.
- */
-function randomMatches(attendees: MatchAttendee[]): MatchResult[] {
-  const shuffled = shuffle(attendees)
-  const results: MatchResult[] = attendees.map((a) => ({ attendeeId: a.id, matches: [] }))
-  const resultById = new Map(results.map((r) => [r.attendeeId, r]))
+/** Tokenise a string into a lowercase word set, filtering noise words. */
+function tokenise(text: string): Set<string> {
+  const STOP = new Set(['i', 'a', 'the', 'and', 'or', 'to', 'for', 'of', 'in', 'is', 'am', 'are', 'with', 'my', 'me', 'we'])
+  return new Set(
+    text.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w.length > 2 && !STOP.has(w))
+  )
+}
 
-  for (let i = 0; i + 1 < shuffled.length; i += 2) {
-    const a = shuffled[i]
-    const b = shuffled[i + 1]
-    resultById.get(a.id)!.matches.push({ matchedAttendeeId: b.id, matchedName: b.name, reason: '' })
-    resultById.get(b.id)!.matches.push({ matchedAttendeeId: a.id, matchedName: a.name, reason: '' })
+/** Jaccard similarity between two word sets (0–1). */
+function jaccard(a: Set<string>, b: Set<string>): number {
+  if (a.size === 0 && b.size === 0) return 0
+  const intersection = [...a].filter(w => b.has(w)).length
+  const union = new Set([...a, ...b]).size
+  return intersection / union
+}
+
+/** Build a word-bag for an attendee from all their response text. */
+function attendeeBag(a: MatchAttendee): Set<string> {
+  const text = [a.lookingFor ?? '', ...Object.values(a.answers)].join(' ')
+  return tokenise(text)
+}
+
+/**
+ * Heuristic fallback matcher.
+ *
+ * Scores every possible pair by Jaccard similarity of their response text,
+ * then greedily picks the highest-scoring unmatched pair until no more can
+ * be formed. Ties are broken by a seeded shuffle so results aren't
+ * alphabetically biased. Every match is mutual by construction.
+ *
+ * Generates a human-readable reason that names the shared keywords so
+ * attendees understand why they were connected even without AI.
+ */
+function heuristicMatches(attendees: MatchAttendee[]): MatchResult[] {
+  const bags = new Map(attendees.map(a => [a.id, attendeeBag(a)]))
+  const results: MatchResult[] = attendees.map(a => ({ attendeeId: a.id, matches: [] }))
+  const resultById = new Map(results.map(r => [r.attendeeId, r]))
+
+  // Score all pairs
+  type ScoredPair = { a: MatchAttendee; b: MatchAttendee; score: number; shared: string[] }
+  const pairs: ScoredPair[] = []
+  for (let i = 0; i < attendees.length; i++) {
+    for (let j = i + 1; j < attendees.length; j++) {
+      const a = attendees[i]
+      const b = attendees[j]
+      const ba = bags.get(a.id)!
+      const bb = bags.get(b.id)!
+      const shared = [...ba].filter(w => bb.has(w))
+      pairs.push({ a, b, score: jaccard(ba, bb), shared })
+    }
+  }
+
+  // Shuffle to break ties randomly, then sort descending by score
+  const shuffled = shuffle(pairs)
+  shuffled.sort((x, y) => y.score - x.score)
+
+  // Greedy matching — each person gets at most one match
+  const matched = new Set<string>()
+  for (const { a, b, score, shared } of shuffled) {
+    if (matched.has(a.id) || matched.has(b.id)) continue
+    matched.add(a.id)
+    matched.add(b.id)
+
+    const reason =
+      shared.length > 0
+        ? `You both mentioned: ${shared.slice(0, 4).join(', ')}.`
+        : score === 0
+        ? "You have complementary profiles — sometimes the best connections are unexpected."
+        : "Your backgrounds look like a strong fit for a conversation."
+
+    resultById.get(a.id)!.matches.push({ matchedAttendeeId: b.id, matchedName: b.name, reason, mutual: true })
+    resultById.get(b.id)!.matches.push({ matchedAttendeeId: a.id, matchedName: a.name, reason, mutual: true })
   }
 
   return results
@@ -64,8 +121,8 @@ export async function triggerMatch(eventId: string): Promise<number> {
   try {
     results = await generateMatches(questions, attendees)
   } catch (err) {
-    console.error('[triggerMatch] AI matching failed, falling back to random pairings:', err)
-    results = randomMatches(attendees)
+    console.error('[triggerMatch] AI matching failed, falling back to heuristic pairings:', err)
+    results = heuristicMatches(attendees)
   }
 
   // Clear old matches, persist new pairs
