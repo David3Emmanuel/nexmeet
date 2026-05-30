@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 
 const spec = {
   openapi: '3.0.3',
-  info: { title: 'NexMeet API', version: '1.0.0', description: 'Backend API for the NexMeet event networking platform.' },
+  info: { title: 'NexMeet API', version: '1.1.0', description: 'Backend API for the NexMeet event networking platform.' },
   servers: [{ url: '/api' }],
   components: {
     securitySchemes: {
@@ -311,6 +311,7 @@ const spec = {
                           attendee_a_name: { type: 'string' },
                           attendee_b_id: { type: 'string', format: 'uuid' },
                           attendee_b_name: { type: 'string' },
+                          reason: { type: 'string', nullable: true },
                         },
                       },
                     },
@@ -327,6 +328,42 @@ const spec = {
     },
 
     // ── Attendees ────────────────────────────────────────────────────────────
+    '/attendees/matches': {
+      get: {
+        tags: ['Attendees'],
+        summary: "Get the attendee's matches",
+        description:
+          'Returns all match pairs for the authenticated attendee at their event, including the peer\'s name and the AI-generated reason. ' +
+          'Does not require coordinates — safe to call as soon as the attendee opens their ticket URL.',
+        security: [{ attendeeToken: [] }],
+        responses: {
+          200: {
+            description: 'Match list',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    matches: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'string', format: 'uuid', description: "Matched attendee's ID." },
+                          name: { type: 'string', description: "Matched attendee's name." },
+                          reason: { type: 'string', nullable: true, description: 'AI-generated explanation for why these two were matched.' },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          401: { description: 'Missing or invalid attendee token' },
+        },
+      },
+    },
     '/attendees/location': {
       put: {
         tags: ['Attendees'],

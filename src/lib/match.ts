@@ -43,11 +43,20 @@ export async function triggerMatch(eventId: string): Promise<number> {
     }
   }
 
+  // Build a lookup of pair → reason (use the reason from attendee_a's perspective)
+  const reasonMap = new Map<string, string>()
+  for (const result of results) {
+    for (const match of result.matches) {
+      const pair = [result.attendeeId, match.matchedAttendeeId].sort().join('|')
+      if (!reasonMap.has(pair)) reasonMap.set(pair, match.reason)
+    }
+  }
+
   for (const pair of pairs) {
     const [a, b] = pair.split('|')
     await pool.query(
-      `INSERT INTO matches (event_id, attendee_a_id, attendee_b_id) VALUES ($1, $2, $3)`,
-      [eventId, a, b],
+      `INSERT INTO matches (event_id, attendee_a_id, attendee_b_id, reason) VALUES ($1, $2, $3, $4)`,
+      [eventId, a, b, reasonMap.get(pair) ?? null],
     )
   }
 
