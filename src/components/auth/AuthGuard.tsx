@@ -2,20 +2,24 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getSession } from '@/lib/auth-client';
-
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [status, setStatus] = useState<'loading' | 'authed' | 'unauthed'>('loading');
 
   useEffect(() => {
-    const session = getSession();
-    if (!session) {
-      setStatus('unauthed');
-      router.replace('/auth');
-    } else {
-      setStatus('authed');
-    }
+    fetch('/api/auth/session')
+      .then(res => {
+        if (res.ok) {
+          setStatus('authed');
+        } else {
+          setStatus('unauthed');
+          router.replace('/auth');
+        }
+      })
+      .catch(() => {
+        setStatus('unauthed');
+        router.replace('/auth');
+      });
   }, [router]);
 
   // Show a subtle spinner while checking — avoids blank page on back navigation
