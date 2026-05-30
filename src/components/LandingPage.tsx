@@ -117,29 +117,44 @@ export default function LandingPage() {
       {/* ─── Hero ─── */}
       <section ref={heroRef} style={{
         minHeight: 'calc(100vh - 62px)',
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
         textAlign: 'center',
         padding: '24px clamp(16px, 4vw, 40px)',
         position: 'relative',
         overflow: 'hidden',
+        backgroundColor: '#120F0C',
       }}>
-        {/* Background orbs */}
-        <div className="land-orb" style={{ position: 'absolute', top: '5%', right: '5%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, color-mix(in srgb, var(--accent) 15%, transparent), transparent 65%)', pointerEvents: 'none' }} />
-        <div className="land-orb" style={{ position: 'absolute', bottom: '10%', left: '-5%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, color-mix(in srgb, var(--plum) 12%, transparent), transparent 65%)', pointerEvents: 'none' }} />
-        <div className="land-orb" style={{ position: 'absolute', top: '40%', left: '10%', width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, color-mix(in srgb, var(--forest) 9%, transparent), transparent 65%)', pointerEvents: 'none' }} />
+        {/* Background Image with Netflix-style Gradient Overlay */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: 'linear-gradient(to bottom, rgba(18, 15, 12, 0.6) 0%, rgba(18, 15, 12, 0.75) 60%, rgba(18, 15, 12, 0.95) 100%), url("/hero-bg.jpg")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }} />
 
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: 800, width: '100%' }}>
-          <h1 className="display hero-word" style={{ fontSize: 'clamp(34px, 5.2vw, 56px)', lineHeight: 1.15, marginBottom: 16 }}>
+        {/* Background orbs */}
+        <div className="land-orb" style={{ position: 'absolute', top: '5%', right: '5%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, color-mix(in srgb, var(--accent) 22%, transparent), transparent 65%)', pointerEvents: 'none', zIndex: 1 }} />
+        <div className="land-orb" style={{ position: 'absolute', bottom: '10%', left: '-5%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, color-mix(in srgb, var(--plum) 18%, transparent), transparent 65%)', pointerEvents: 'none', zIndex: 1 }} />
+        <div className="land-orb" style={{ position: 'absolute', top: '40%', left: '10%', width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, color-mix(in srgb, var(--forest) 12%, transparent), transparent 65%)', pointerEvents: 'none', zIndex: 1 }} />
+
+        <div style={{ position: 'relative', zIndex: 2, maxWidth: 800, width: '100%' }}>
+          <h1 className="display hero-word" style={{ fontSize: 'clamp(34px, 5.2vw, 56px)', lineHeight: 1.15, marginBottom: 16, color: '#ffffff' }}>
             AI-powered <span style={{ color: 'var(--accent)' }}>networking</span><br />for events and more
           </h1>
 
-          <p className="lead hero-word" style={{ fontSize: 'clamp(17px, 2.4vw, 21px)', maxWidth: 580, margin: '0 auto 24px', lineHeight: 1.5 }}>
+          <p className="lead hero-word" style={{ fontSize: 'clamp(17px, 2.4vw, 21px)', maxWidth: 580, margin: '0 auto 24px', lineHeight: 1.5, color: 'rgba(255, 255, 255, 0.85)' }}>
             Set up in 2 minutes. Go live instantly.
           </p>
 
           <div className="hero-word" style={{ maxWidth: 580, margin: '0 auto' }}>
-            <p style={{ fontSize: 16, color: 'var(--ink-2)', fontWeight: 700, marginBottom: 12 }}>
+            <p style={{ fontSize: 16, color: 'rgba(255, 255, 255, 0.65)', fontWeight: 700, marginBottom: 12 }}>
               Ready to connect? Enter your email to create your room.
             </p>
             <form onSubmit={handleGetStarted} className="hero-email-form">
