@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/Icon';
-import Logo from '@/components/ui/Logo';
 import QrCode from '@/components/ui/QrCode';
 import ImageDrop from '@/components/ui/ImageDrop';
 
@@ -83,7 +82,7 @@ function StepDetails({ details, set }: { details: Details; set: (k: string, v: s
           <div className="eyebrow">Step 1 · Event Details</div>
           <h1 className="display" style={{ fontSize: 34, marginTop: 10, marginBottom: 8 }}>What are you hosting?</h1>
           <p className="lead" style={{ fontSize: 14.5 }}>
-            Fill in the information below. NexMeet's AI will draft a custom sign-up form and choose a matching event theme.
+            Fill in the information below. NexMeet&apos;s AI will draft a custom sign-up form and choose a matching event theme.
           </p>
         </div>
 
@@ -307,8 +306,7 @@ function StepReview({ details, themeObj, themeId, onTheme, questions, setQuestio
   const [editing, setEditing] = useState<string | null>(null);
   const toggle = (id: string) => setQuestions(questions.map(q => q.id === id && !q.locked ? { ...q, on: !q.on } : q));
   const edit = (id: string, v: string) => setQuestions(questions.map(q => q.id === id ? { ...q, q: v } : q));
-  const addQ = () => setQuestions([...questions, { id: "c" + Date.now(), q: "New question", on: true, custom: true }]);
-  const removeQ = (id: string) => setQuestions(questions.filter(q => q.id !== id));
+const removeQ = (id: string) => setQuestions(questions.filter(q => q.id !== id));
 
   return (
     <div className="screen-enter">
@@ -316,7 +314,7 @@ function StepReview({ details, themeObj, themeId, onTheme, questions, setQuestio
         <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--accent)", background: "color-mix(in srgb, var(--accent) 12%, transparent)", padding: "5px 10px", borderRadius: 999 }}>✦ AI generated</span>
       </div>
       <h1 className="display" style={{ fontSize: 32, marginTop: 12, marginBottom: 6 }}>Review &amp; edit</h1>
-      <p className="lead" style={{ fontSize: 15, marginBottom: 26 }}>Here's what we drafted. Change the theme, toggle questions on or off, rename anything, or add your own.</p>
+      <p className="lead" style={{ fontSize: 15, marginBottom: 26 }}>Here&apos;s what we drafted. Change the theme, toggle questions on or off, rename anything, or add your own.</p>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1.15fr", gap: 24, alignItems: "start" }} className="review-grid">
         <div className="panel" style={{ padding: 22 }}>
@@ -415,7 +413,7 @@ function StepLive({ details, themeObj, onLaunch }: { details: Details; themeObj:
   return (
     <div className="screen-enter" style={{ maxWidth: 560, margin: "0 auto", textAlign: "center", padding: "20px 0 40px" }}>
       <div style={{ width: 64, height: 64, borderRadius: "50%", background: "var(--forest)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", animation: "pop .5s var(--pop)" }}><Icon name="check" size={32} stroke={3} /></div>
-      <div className="eyebrow">You're live</div>
+      <div className="eyebrow">You&apos;re live</div>
       <h1 className="display" style={{ fontSize: 34, marginTop: 12 }}>&ldquo;{details.title}&rdquo; is ready</h1>
       <p className="lead" style={{ fontSize: 15, marginTop: 12, marginBottom: 26 }}>Share the QR or link anywhere — screen, print, or the group chat. Matches start the moment people sign up.</p>
       <div className="panel" style={{ padding: 26, display: "inline-block" }}>

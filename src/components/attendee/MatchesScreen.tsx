@@ -86,7 +86,7 @@ export default function MatchesScreen({ you, matches, count, onOpen, onMap, onRe
           {refreshing ? "Re-reading the room…" : "Refresh as more people join"}
         </button>
         <p style={{ textAlign: "center", marginTop: 14, fontSize: 12.5, color: "var(--ink-3)" }}>
-          <Icon name="chat" size={13} /> We've emailed these to you too — they unlock at match time.
+          <Icon name="chat" size={13} /> We&apos;ve emailed these to you too — they unlock at match time.
         </p>
       </div>
     </div>

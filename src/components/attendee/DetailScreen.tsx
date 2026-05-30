@@ -92,7 +92,7 @@ export default function DetailScreen({ you, match, met, onBack, onShare, onMet }
             <Icon name="share" size={19} />
           </button>
           <button className={"btn btn-full " + (met ? "btn-ghost" : "btn-ink")} onClick={onMet}>
-            {met ? <><Icon name="check" size={19} /> Marked as met</> : <><Icon name="heart" size={18} /> I'll go say hi</>}
+            {met ? <><Icon name="check" size={19} /> Marked as met</> : <><Icon name="heart" size={18} /> I&apos;ll go say hi</>}
           </button>
         </div>
       </div>

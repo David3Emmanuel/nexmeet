@@ -8,8 +8,6 @@ import DetailScreen from '@/components/attendee/DetailScreen';
 import ShareSheet from '@/components/attendee/ShareSheet';
 import MapScreen from '@/components/attendee/MapScreen';
 import BottomNav from '@/components/attendee/BottomNav';
-import Logo from '@/components/ui/Logo';
-import Icon from '@/components/ui/Icon';
 import { useRouter } from 'next/navigation';
 import { DEMO_YOU, SEED, Match, YouProfile, generateMatches } from '@/lib/data';
 

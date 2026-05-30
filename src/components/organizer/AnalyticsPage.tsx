@@ -1,9 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
-import { AV, SEED } from '@/lib/data';
 import Icon from '@/components/ui/Icon';
-import Avatar from '@/components/ui/Avatar';
 
 const STATS = [
   { label: 'Total attendees', value: '330', delta: '+18 this month', accent: 'var(--coral)', icon: 'users' },

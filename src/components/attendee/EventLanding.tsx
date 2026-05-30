@@ -64,7 +64,7 @@ export default function EventLanding({ event }: { event: EventData }) {
 
         {/* Hero */}
         <div className="anim-up" style={{ marginTop: 40, marginBottom: 32 }}>
-          <div className="eyebrow" style={{ marginBottom: 10 }}>You're invited</div>
+          <div className="eyebrow" style={{ marginBottom: 10 }}>You&apos;re invited</div>
           <h1 className="display" style={{ fontSize: 38, lineHeight: 1.1, marginBottom: 16 }}>
             {event.name}
           </h1>

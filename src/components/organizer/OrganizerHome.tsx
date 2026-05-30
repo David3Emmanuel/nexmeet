@@ -3,7 +3,7 @@
 import Avatar from '@/components/ui/Avatar';
 import Icon from '@/components/ui/Icon';
 import Logo from '@/components/ui/Logo';
-import { AV, EVENT, SEED } from '@/lib/data';
+import { EVENT, SEED } from '@/lib/data';
 
 interface OrganizerHomeProps {
   onCreate: () => void;

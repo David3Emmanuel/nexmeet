@@ -1,10 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { gsap } from 'gsap';
 import { markOnboarded } from '@/lib/auth';
-import Logo from '@/components/ui/Logo';
 import Icon from '@/components/ui/Icon';
 
 const STEPS = [

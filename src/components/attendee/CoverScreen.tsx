@@ -23,12 +23,12 @@ export default function CoverScreen({ onStart, onOrganizer }: CoverScreenProps) 
       </div>
 
       <div style={{ padding: "48px 26px 0", flex: 1, display: "flex", flexDirection: "column" }}>
-        <div className="eyebrow anim-up">You're in the room · live now</div>
+        <div className="eyebrow anim-up">You&apos;re in the room · live now</div>
         <h1 className="display anim-up d1" style={{ fontSize: 44, marginTop: 14, lineHeight: 1.05 }}>
           Meet the<br />right people.<br /><span style={{ color: "var(--accent)" }}>Every time.</span>
         </h1>
         <p className="lead anim-up d2" style={{ fontSize: 17, marginTop: 18, maxWidth: 320 }}>
-          Tell us about you in two minutes. Our AI reads everyone in the room and hands you the three people you can't afford to miss tonight.
+          Tell us about you in two minutes. Our AI reads everyone in the room and hands you the three people you can&apos;t afford to miss tonight.
         </p>
 
         <div className="anim-up d3" style={{ marginTop: 26, background: "var(--card)", border: "1px solid var(--card-edge)", borderRadius: 24, padding: 20, boxShadow: "var(--shadow-sm)" }}>

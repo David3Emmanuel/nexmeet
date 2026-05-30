@@ -50,7 +50,7 @@ function LocationGate({ onGrant, onSkip }: LocationGateProps) {
         <button className="btn btn-primary btn-full" onClick={onGrant}><Icon name="location" size={18} /> Enable location</button>
         <button className="btn btn-ghost btn-full" onClick={onSkip}>Not now</button>
       </div>
-      <p style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 16, maxWidth: 280 }}>Only shared with people you've matched with, only during the event.</p>
+      <p style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 16, maxWidth: 280 }}>Only shared with people you&apos;ve matched with, only during the event.</p>
     </div>
   );
 }

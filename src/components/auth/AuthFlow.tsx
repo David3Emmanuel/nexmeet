@@ -99,7 +99,7 @@ export default function AuthFlow() {
         body: JSON.stringify({ email, code }),
       });
       if (!res.ok) {
-        setOtpErr('That code doesn\'t match. Double-check or request a new one.');
+        setOtpErr("That code doesn't match. Double-check or request a new one.");
         return;
       }
       router.push('/organizer');
@@ -159,7 +159,7 @@ export default function AuthFlow() {
                 <div className="eyebrow" style={{ marginBottom: 8 }}>Welcome to NexMeet</div>
                 <h1 className="display" style={{ fontSize: 28, marginBottom: 8 }}>Sign in to get started</h1>
                 <p className="lead" style={{ fontSize: 15, marginBottom: 28 }}>
-                  Enter your email and we'll send you a 6-digit code. No passwords, ever.
+                  Enter your email and we&apos;ll send you a 6-digit code. No passwords, ever.
                 </p>
 
                 <form onSubmit={handleEmailSubmit}>
@@ -259,7 +259,7 @@ export default function AuthFlow() {
                   </button>
 
                   <p style={{ textAlign: 'center', marginTop: 18, fontSize: 13.5, color: 'var(--ink-3)' }}>
-                    Didn't get it?{' '}
+                    Didn&apos;t get it?{' '}
                     {resendTimer > 0 ? (
                       <span>Resend in {resendTimer}s</span>
                     ) : (
@@ -275,7 +275,7 @@ export default function AuthFlow() {
         </div>
 
         <p style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.5 }}>
-          By continuing you agree to NexMeet's{' '}
+          By continuing you agree to NexMeet&apos;s{' '}
           <a href="#" style={{ color: 'var(--ink-2)', textDecoration: 'underline' }}>Terms</a>
           {' '}and{' '}
           <a href="#" style={{ color: 'var(--ink-2)', textDecoration: 'underline' }}>Privacy Policy</a>.
