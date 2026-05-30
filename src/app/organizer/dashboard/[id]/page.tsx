@@ -31,7 +31,7 @@ export default function DashboardPage({
         >
           <OrganizerDashboard
             event={{ name: eventName, type: 'event' }}
-            onExit={() => router.push(`/event/${id}`)}
+            onExit={() => router.push(`/e/${id}`)}
             onHome={() => router.push('/organizer')}
             onNewEvent={() => router.push('/organizer/create')}
           />

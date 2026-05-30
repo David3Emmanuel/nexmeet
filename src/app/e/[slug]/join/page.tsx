@@ -66,7 +66,7 @@ export default function JoinPage({
         {screen === 'form' && (
           <FormScreen
             initial={you}
-            onBack={() => router.push(`/event/${slug}`)}
+            onBack={() => router.push(`/e/${slug}`)}
             onSubmit={submit}
           />
         )}
@@ -101,7 +101,7 @@ export default function JoinPage({
                   }}
                   onMap={() => setScreen('map')}
                   onRefresh={refresh}
-                  onRestart={() => router.push(`/event/${slug}`)}
+                  onRestart={() => router.push(`/e/${slug}`)}
                 />
               )}
               {screen === 'map' && (

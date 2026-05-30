@@ -400,7 +400,7 @@ function StepLive({ details, themeObj, onLaunch }: { details: Details; themeObj:
         <div style={{ display: "inline-block", padding: 16, background: "var(--paper-2)", borderRadius: 22 }}>
           <QrCode seed={slug} size={170} />
         </div>
-        <div className="display" style={{ fontSize: 19, marginTop: 16 }}>nexmeet.app/event/{slug}</div>
+        <div className="display" style={{ fontSize: 19, marginTop: 16 }}>nexmeet.app/e/{slug}</div>
         <div className="lead" style={{ fontSize: 13, marginTop: 4 }}>Scan to join · no login needed</div>
       </div>
       <div className="row gap10 center" style={{ marginTop: 26 }}>

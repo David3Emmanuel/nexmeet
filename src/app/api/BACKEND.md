@@ -133,7 +133,7 @@ Relevant files: `src/lib/auth.ts`, `src/lib/email.ts`
 Attendees never sign up or manage accounts.
 
 1. **Registration:** Upon form submission, the backend assigns a long random `auth_token` to the attendee record.
-2. **Delivery:** The confirmation email contains a personalized link: `https://yourapp.com/event/:id/map?ticket=ATTENDEE_AUTH_TOKEN`.
+2. **Delivery:** The confirmation email contains a personalized link: `https://yourapp.com/e/:id/map?ticket=ATTENDEE_AUTH_TOKEN`.
 3. **Access:** The `ticket` parameter is sent with requests to query match info and update coordinates. Authorization relies on matching this token against the database.
 
 ## Form Fields
