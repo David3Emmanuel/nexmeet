@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { markOnboarded } from '@/lib/auth';
+import { markOnboarded } from '@/lib/auth-client';
 import Icon from '@/components/ui/Icon';
 
 const STEPS = [

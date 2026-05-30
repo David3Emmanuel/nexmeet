@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Logo from '@/components/ui/Logo';
 import Icon from '@/components/ui/Icon';
 import Avatar from '@/components/ui/Avatar';
-import { clearSession, getSession, NexSession } from '@/lib/auth';
+import { clearSession, getSession, NexSession } from '@/lib/auth-client';
 
 interface NavItem {
   id: string;

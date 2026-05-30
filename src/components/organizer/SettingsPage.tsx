@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/Icon';
 import Avatar from '@/components/ui/Avatar';
-import { getSession, NexSession } from '@/lib/auth';
+import { getSession, NexSession } from '@/lib/auth-client';
 
 export default function SettingsPage() {
   const [session, setSession] = useState<NexSession | null>(null);
