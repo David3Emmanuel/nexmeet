@@ -16,7 +16,7 @@ The backend is a **Next.js app router** with API routes under `src/app/api/`, de
 ### Key Architectural Decisions
 
 - **Database over WebSockets:** Instead of persistent WebSocket connections for location tracking, the architecture uses **HTTP short polling**. The client `PUT`s its location and receives match data in a single stateless request-response cycle.
-- **Storage Offloading:** The backend never handles image binary data. The frontend requests a pre-signed URL to upload flyers directly to external storage, and only the final URL string is stored in the database.
+- **Storage Offloading:** The backend never handles image binary data. The frontend uploads flyers directly to Cloudinary via the `ImageDrop` component (`src/components/ui/ImageDrop.tsx`), which POSTs to the Cloudinary unsigned upload API using `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` and `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET`. Only the resulting `secure_url` string is stored in the database.
 - **AI-Powered Matching:** Matching is triggered on-demand (via organizer action or scheduled job) and uses an LLM to pair attendees based on their form responses.
 
 ## Entities & Database Schema
@@ -174,7 +174,7 @@ Each event has a fixed set of base fields followed by AI-generated questions:
 
 - **Auth:** Session cookie (organizer).
 - **Purpose:** Uses an LLM to generate a `theme_config` from the event title and description.
-- **Payload:** `{ title: string, about: string }`
+- **Payload:** `{ title: string, about: string, image_url: string }`
 - **Response:** `{ theme_config: { foreground, background, accent, fontFamily } }`
 
 #### `POST /api/events/generate/questions`
