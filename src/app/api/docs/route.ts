@@ -41,6 +41,19 @@ const spec = {
           helperText: { type: 'string' },
         },
       },
+      EventSummary: {
+        type: 'object',
+        description: 'Event row returned in list responses.',
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+          title: { type: 'string' },
+          about: { type: 'string' },
+          image_url: { type: 'string', format: 'uri' },
+          theme_config: { $ref: '#/components/schemas/ThemeConfig' },
+          match_times: { type: 'array', items: { type: 'string', format: 'date-time' } },
+          matched: { type: 'boolean' },
+        },
+      },
       Error: {
         type: 'object',
         properties: { error: { type: 'string' } },
@@ -48,6 +61,7 @@ const spec = {
     },
   },
   paths: {
+    // ── Auth ────────────────────────────────────────────────────────────────
     '/auth/otp/request': {
       post: {
         tags: ['Auth'],
@@ -81,6 +95,8 @@ const spec = {
         },
       },
     },
+
+    // ── Events — AI ─────────────────────────────────────────────────────────
     '/events/generate/theme': {
       post: {
         tags: ['Events — AI'],
@@ -107,7 +123,18 @@ const spec = {
         },
       },
     },
+
+    // ── Events — CRUD ────────────────────────────────────────────────────────
     '/events': {
+      get: {
+        tags: ['Events'],
+        summary: "List the organizer's events",
+        security: [{ sessionCookie: [] }],
+        responses: {
+          200: { description: 'Event list', content: { 'application/json': { schema: { type: 'object', properties: { events: { type: 'array', items: { $ref: '#/components/schemas/EventSummary' } } } } } } },
+          401: { description: 'Unauthorized' },
+        },
+      },
       post: {
         tags: ['Events'],
         summary: 'Create an event',
@@ -118,7 +145,7 @@ const spec = {
             'application/json': {
               schema: {
                 type: 'object',
-                required: ['title', 'about', 'form_fields', 'theme_config', 'match_times'],
+                required: ['title'],
                 properties: {
                   title: { type: 'string' },
                   about: { type: 'string' },
@@ -133,6 +160,7 @@ const spec = {
         },
         responses: {
           201: { description: 'Event created', content: { 'application/json': { schema: { type: 'object', properties: { event_id: { type: 'string', format: 'uuid' } } } } } },
+          400: { description: 'title missing', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
           401: { description: 'Unauthorized' },
         },
       },
@@ -140,11 +168,52 @@ const spec = {
     '/events/{id}': {
       get: {
         tags: ['Events'],
-        summary: 'Get event (attendee-facing)',
+        summary: 'Get event (public, attendee-facing)',
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
         responses: {
           200: { description: 'Event data', content: { 'application/json': { schema: { type: 'object', properties: { title: { type: 'string' }, about: { type: 'string' }, image_url: { type: 'string' }, form_fields: { type: 'array', items: { $ref: '#/components/schemas/FormQuestion' } }, theme_config: { $ref: '#/components/schemas/ThemeConfig' } } } } } },
           404: { description: 'Not found' },
+        },
+      },
+      patch: {
+        tags: ['Events'],
+        summary: 'Update an event (partial)',
+        security: [{ sessionCookie: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  title: { type: 'string' },
+                  about: { type: 'string' },
+                  image_url: { type: 'string', format: 'uri' },
+                  form_fields: { type: 'array', items: { $ref: '#/components/schemas/FormQuestion' } },
+                  theme_config: { $ref: '#/components/schemas/ThemeConfig' },
+                  match_times: { type: 'array', items: { type: 'string', format: 'date-time' } },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'Updated', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' } } } } } },
+          400: { description: 'Nothing to update', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
+          401: { description: 'Unauthorized' },
+          404: { description: 'Not found or not owned' },
+        },
+      },
+      delete: {
+        tags: ['Events'],
+        summary: 'Delete an event',
+        security: [{ sessionCookie: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        responses: {
+          200: { description: 'Deleted', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' } } } } } },
+          401: { description: 'Unauthorized' },
+          404: { description: 'Not found or not owned' },
         },
       },
     },
@@ -153,9 +222,10 @@ const spec = {
         tags: ['Events'],
         summary: 'Register as attendee',
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
-        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['name', 'email', 'phone'], properties: { name: { type: 'string' }, email: { type: 'string', format: 'email' }, phone: { type: 'string' }, responses: { type: 'object', additionalProperties: { type: 'string' } } } } } } },
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['name', 'email'], properties: { name: { type: 'string' }, email: { type: 'string', format: 'email' }, phone: { type: 'string' }, responses: { type: 'object', additionalProperties: { type: 'string' } } } } } } },
         responses: {
           200: { description: 'Registered — confirmation email sent', content: { 'application/json': { schema: { type: 'object', properties: { success: { type: 'boolean' } } } } } },
+          400: { description: 'name or email missing' },
           404: { description: 'Event not found' },
         },
       },
@@ -167,17 +237,19 @@ const spec = {
         security: [{ sessionCookie: [] }],
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
         responses: {
-          200: { description: 'Matching complete' },
+          200: { description: 'Matching complete', content: { 'application/json': { schema: { type: 'object', properties: { matched: { type: 'integer', description: 'Number of unique pairs generated' } } } } } },
+          400: { description: 'No attendees to match' },
           401: { description: 'Unauthorized' },
-          403: { description: 'Not your event' },
-          404: { description: 'Event not found' },
+          404: { description: 'Event not found or not owned' },
         },
       },
     },
+
+    // ── Attendees ────────────────────────────────────────────────────────────
     '/attendees/location': {
       put: {
         tags: ['Attendees'],
-        summary: 'Update location and poll matches',
+        summary: 'Update location and poll match positions',
         security: [{ attendeeToken: [] }],
         requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['lat', 'lng'], properties: { lat: { type: 'number' }, lng: { type: 'number' } } } } } },
         responses: {
@@ -197,10 +269,13 @@ const spec = {
               },
             },
           },
+          400: { description: 'lat or lng missing' },
           401: { description: 'Invalid or missing attendee token' },
         },
       },
     },
+
+    // ── Media ────────────────────────────────────────────────────────────────
     '/media/upload': {
       post: {
         tags: ['Media'],
