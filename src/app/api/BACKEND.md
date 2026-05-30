@@ -172,24 +172,28 @@ Each event has a fixed set of base fields followed by AI-generated questions:
 
 #### `POST /api/events/generate/theme`
 
+- **Auth:** Session cookie (organizer).
 - **Purpose:** Uses an LLM to generate a `theme_config` from the event title and description.
 - **Payload:** `{ title: string, about: string }`
 - **Response:** `{ theme_config: { foreground, background, accent, fontFamily } }`
 
 #### `POST /api/events/generate/questions`
 
+- **Auth:** Session cookie (organizer).
 - **Purpose:** Uses an LLM to generate up to 5 event-specific form questions.
 - **Payload:** `{ title: string, about: string }`
 - **Response:** `{ form_fields: FormField[] }` — `text`/`textarea` types only, excludes base fields
 
 #### `POST /api/events`
 
+- **Auth:** Session cookie (organizer).
 - **Purpose:** Creates the event record once the organizer approves or edits the AI-generated layout.
 - **Payload:** `{ title, about, image_url, form_fields, theme_config, match_times }`
 - **Response:** `{ event_id: "UUID" }`
 
 #### `POST /api/events/:id/match`
 
+- **Auth:** Session cookie (organizer) — must own the event.
 - **Purpose:** Triggers AI-powered matchmaking for the event. Can also be invoked automatically at a scheduled match time.
 - **Payload:** None
 - **Action:** Queries all attendees and their responses, uses an LLM to pair them, populates the `Matches` table, sets `Events.matched = true`, and sends match notification emails.
@@ -200,21 +204,21 @@ Each event has a fixed set of base fields followed by AI-generated questions:
 
 #### `GET /api/events/:id`
 
-- **Purpose:** Fetches event data to render the registration form on the client.
 - **Auth:** Public.
+- **Purpose:** Fetches event data to render the registration form on the client.
 - **Response:** `{ title, about, image_url, form_fields, theme_config }`
 
 #### `POST /api/events/:id/register`
 
-- **Purpose:** Processes attendee registration.
 - **Auth:** Public.
+- **Purpose:** Processes attendee registration.
 - **Payload:** `{ name, email, phone, responses: { ... } }`
 - **Response:** `{ success: true }` _(Triggers a confirmation email with the signed URL ticket)._
 
 #### `PUT /api/attendees/location`
 
+- **Auth:** `X-Attendee-Token: <ATTENDEE_AUTH_TOKEN>` header.
 - **Purpose:** Dual-purpose polling endpoint for the live map. The client sends coordinates and receives match locations in return.
-- **Auth:** Validates `X-Attendee-Token: <ATTENDEE_AUTH_TOKEN>` header.
 - **Payload:** `{ lat: float, lng: float }`
 - **Response:**
   ```json
