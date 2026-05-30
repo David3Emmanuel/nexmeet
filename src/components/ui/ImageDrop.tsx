@@ -6,12 +6,20 @@ import Icon from './Icon';
 interface ImageDropProps {
   placeholder?: string;
   style?: React.CSSProperties;
+  value?: string | null;
+  onChange?: (src: string | null) => void;
 }
 
-export default function ImageDrop({ placeholder = "Drop flyer / logo", style }: ImageDropProps) {
+export default function ImageDrop({ placeholder = "Drop flyer / logo", style, value, onChange }: ImageDropProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [src, setSrc] = useState<string | null>(null);
+  const [internalSrc, setInternalSrc] = useState<string | null>(null);
   const [over, setOver] = useState(false);
+
+  const src = value !== undefined ? value : internalSrc;
+  const setSrc = (val: string | null) => {
+    if (onChange) onChange(val);
+    setInternalSrc(val);
+  };
 
   const ingest = (file: File) => {
     if (!file.type.startsWith("image/")) return;

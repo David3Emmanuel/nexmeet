@@ -53,7 +53,7 @@ interface Details {
   type: string; 
   date: string;
   venue: string;
-  matchCount: string;
+  flyer?: string | null;
 }
 
 interface Timing { mode: string; when: string; }
