@@ -40,6 +40,8 @@ export default function EventsPage() {
   const [tab, setTab] = useState<Tab>('all');
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/events')
@@ -64,6 +66,24 @@ export default function EventsPage() {
         setLoading(false);
       });
   }, []);
+
+  async function deleteEvent(id: string) {
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/events/${id}`, { method: 'DELETE', credentials: 'include' });
+      if (res.ok) {
+        setEvents(prev => prev.filter(e => e.id !== id));
+      } else {
+        const { error } = await res.json().catch(() => ({ error: 'Delete failed' }));
+        alert(error || 'Delete failed');
+      }
+    } catch {
+      alert('Network error, please try again.');
+    } finally {
+      setDeletingId(null);
+      setConfirmId(null);
+    }
+  }
 
   const filtered = tab === 'all' ? events : events.filter(e => e.status === tab);
 
@@ -172,11 +192,65 @@ export default function EventsPage() {
                 <div style={{ height: 4, background: ev.accent, borderRadius: 999, marginBottom: 18, width: 40 }} />
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                  <div>
+                  <div style={{ flex: 1, minWidth: 0, marginRight: 10 }}>
                     <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 6 }}>{ev.type}</div>
                     <div className="display" style={{ fontSize: 18, lineHeight: 1.2 }}>{ev.name}</div>
                   </div>
-                  <StatusBadge status={ev.status} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                    <StatusBadge status={ev.status} />
+                    {confirmId === ev.id ? (
+                      <div style={{ display: 'flex', gap: 4 }} onClick={e => e.stopPropagation()}>
+                        <button
+                          onClick={e => { e.stopPropagation(); deleteEvent(ev.id); }}
+                          disabled={deletingId === ev.id}
+                          title="Confirm delete"
+                          style={{
+                            padding: '4px 10px', borderRadius: 8, fontSize: 12, fontWeight: 700,
+                            background: 'var(--red, #e53935)', color: '#fff', cursor: 'pointer',
+                            opacity: deletingId === ev.id ? 0.6 : 1,
+                          }}
+                        >
+                          {deletingId === ev.id ? '…' : 'Delete'}
+                        </button>
+                        <button
+                          onClick={e => { e.stopPropagation(); setConfirmId(null); }}
+                          title="Cancel"
+                          style={{
+                            padding: '4px 8px', borderRadius: 8, fontSize: 12, fontWeight: 700,
+                            background: 'var(--paper-2)', color: 'var(--ink-2)', cursor: 'pointer',
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={e => { e.stopPropagation(); setConfirmId(ev.id); }}
+                        title="Delete event"
+                        style={{
+                          width: 30, height: 30, borderRadius: 8,
+                          background: 'transparent', color: 'var(--ink-3)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          cursor: 'pointer', transition: 'background .15s, color .15s',
+                        }}
+                        onMouseEnter={e => {
+                          (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--red, #e53935) 12%, transparent)';
+                          (e.currentTarget as HTMLElement).style.color = 'var(--red, #e53935)';
+                        }}
+                        onMouseLeave={e => {
+                          (e.currentTarget as HTMLElement).style.background = 'transparent';
+                          (e.currentTarget as HTMLElement).style.color = 'var(--ink-3)';
+                        }}
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                          <path d="M10 11v6M14 11v6" />
+                          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="lead" style={{ fontSize: 13.5, marginBottom: 16 }}>{ev.date}</div>
