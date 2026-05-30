@@ -8,7 +8,7 @@ export async function generateFormQuestions(
   questionCount: number = 5
 ): Promise<FormQuestion[]> {
   const response = await ai.models.generateContent({
-    model: "gemini-2.0-flash",
+    model: "gemini-3.5-flash",
     contents: buildQuestionPrompt(event, questionCount),
     config: {
       responseMimeType: "application/json",
