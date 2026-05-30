@@ -32,7 +32,7 @@ async function matchOne(
   const validIds = new Set(candidates.map((c) => c.id));
 
   const response = await ai.models.generateContent({
-    model: "gemini-3.5-flash",
+    model: "gemini-2.5-flash",
     contents: buildMatchPrompt(focal, candidates, questions, target),
     config: {
       responseMimeType: "application/json",
@@ -71,7 +71,7 @@ async function generateReason(
   questions: FormQuestion[]
 ): Promise<string> {
   const response = await ai.models.generateContent({
-    model: "gemini-3.5-flash",
+    model: "gemini-2.5-flash",
     contents: buildReasonPrompt(owner, target, questions),
     config: {
       responseMimeType: "application/json",

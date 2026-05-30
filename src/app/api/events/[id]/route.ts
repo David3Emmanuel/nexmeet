@@ -9,8 +9,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const { id } = await params
 
   const { rows } = await pool.query(
-    `SELECT e.title, e.about, e.image_url, e.form_fields, e.theme_config
-     FROM events e WHERE e.id = $1`,
+    `SELECT e.id, e.title, e.about, e.image_url, e.form_fields, e.theme_config, e.short_code, e.matched, e.event_date as date, e.venue
+     FROM events e WHERE e.slug = $1 OR e.id::text = $1 OR upper(e.short_code) = upper($1)`,
     [id],
   )
   if (rows.length === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -29,7 +29,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const owned = await pool.query(
     `SELECT e.id FROM events e
      JOIN organizers o ON o.id = e.organizer_id
-     WHERE e.id = $1 AND o.email = $2`,
+     WHERE (e.slug = $1 OR e.id::text = $1) AND o.email = $2`,
     [id, session.email],
   )
   if (owned.rowCount === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -38,17 +38,18 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const values: unknown[] = []
   let i = 1
 
-  const allowed = ['title', 'about', 'image_url', 'form_fields', 'theme_config', 'match_times'] as const
+  const allowed = ['title', 'about', 'image_url', 'form_fields', 'theme_config', 'match_times', 'date', 'venue'] as const
   for (const key of allowed) {
     if (key in body) {
-      fields.push(`${key} = $${i++}`)
+      const dbCol = key === 'date' ? 'event_date' : key;
+      fields.push(`${dbCol} = $${i++}`)
       values.push(typeof body[key] === 'object' ? JSON.stringify(body[key]) : body[key])
     }
   }
 
   if (fields.length === 0) return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
 
-  values.push(id)
+  values.push(owned.rows[0].id)
   await pool.query(`UPDATE events SET ${fields.join(', ')} WHERE id = $${i}`, values)
 
   return NextResponse.json({ success: true })
@@ -63,7 +64,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
   const { rowCount } = await pool.query(
     `DELETE FROM events e USING organizers o
-     WHERE e.organizer_id = o.id AND e.id = $1 AND o.email = $2`,
+     WHERE e.organizer_id = o.id AND (e.slug = $1 OR e.id::text = $1) AND o.email = $2`,
     [id, session.email],
   )
 

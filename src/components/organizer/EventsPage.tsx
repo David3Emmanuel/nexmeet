@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/Icon';
 import Avatar from '@/components/ui/Avatar';
-import { AV, EVENT, SEED } from '@/lib/data';
+import { AV } from '@/lib/data';
 
 type Tab = 'all' | 'live' | 'draft' | 'ended';
 
@@ -13,45 +13,6 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'live', label: 'Live' },
   { id: 'draft', label: 'Drafts' },
   { id: 'ended', label: 'Ended' },
-];
-
-const MY_EVENTS = [
-  {
-    id: 'buildwithai-lagos-26',
-    name: EVENT.name + ' ' + EVENT.edition,
-    date: EVENT.date,
-    status: 'live' as const,
-    attendees: SEED.length + 6,
-    accent: 'var(--coral)',
-    type: 'Hackathon',
-  },
-  {
-    id: 'gdg-devfest-lagos',
-    name: 'GDG DevFest Lagos',
-    date: 'Nov 16 · 2025',
-    status: 'ended' as const,
-    attendees: 312,
-    accent: 'var(--plum)',
-    type: 'Conference',
-  },
-  {
-    id: 'founders-friday-08',
-    name: 'Founders Friday #08',
-    date: 'Jun 4 · 2026',
-    status: 'draft' as const,
-    attendees: 0,
-    accent: 'var(--forest)',
-    type: 'Meetup',
-  },
-  {
-    id: 'ai-summit-abuja',
-    name: 'AI Summit Abuja',
-    date: 'Jul 19 · 2026',
-    status: 'draft' as const,
-    attendees: 0,
-    accent: 'var(--sky)',
-    type: 'Conference',
-  },
 ];
 
 function StatusBadge({ status }: { status: string }) {
@@ -77,8 +38,34 @@ function StatusBadge({ status }: { status: string }) {
 export default function EventsPage() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('all');
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = tab === 'all' ? MY_EVENTS : MY_EVENTS.filter(e => e.status === tab);
+  useEffect(() => {
+    fetch('/api/events')
+      .then(res => res.json())
+      .then(data => {
+        if (data.events) {
+          const parsed = data.events.map((e: any) => ({
+            id: e.slug || e.id,
+            name: e.title,
+            date: e.match_times && e.match_times[0] ? new Date(e.match_times[0]).toLocaleDateString() : 'No date set',
+            status: e.matched ? 'ended' : 'live', // Simplified status for now
+            attendees: 0, // Will fetch later
+            accent: (e.theme_config && typeof e.theme_config === 'string' ? JSON.parse(e.theme_config).accent : e.theme_config?.accent) || 'var(--coral)',
+            type: e.about?.slice(0, 20) || 'Event',
+          }));
+          setEvents(parsed);
+        }
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []);
+
+  const filtered = tab === 'all' ? events : events.filter(e => e.status === tab);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -117,7 +104,7 @@ export default function EventsPage() {
                     color: tab === t.id ? 'var(--accent)' : 'var(--ink-3)',
                     padding: '2px 7px', borderRadius: 999,
                   }}>
-                    {MY_EVENTS.filter(e => e.status === t.id).length}
+                    {events.filter(e => e.status === t.id).length}
                   </span>
                 )}
               </button>
@@ -128,7 +115,23 @@ export default function EventsPage() {
 
       {/* Content */}
       <div className="org-content-container">
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 18 }}>
+            {[1, 2, 3].map(i => (
+              <div key={i} style={{
+                background: 'var(--card)', border: '1px solid var(--card-edge)', borderRadius: 20, padding: 22, height: 180,
+                animation: `pulse 1.5s infinite ease-in-out ${i * 0.15}s`, opacity: 0.6
+              }}>
+                <div style={{ width: 40, height: 4, background: 'var(--paper-2)', borderRadius: 999, marginBottom: 22 }} />
+                <div style={{ width: '35%', height: 10, background: 'var(--paper-2)', borderRadius: 4, marginBottom: 8 }} />
+                <div style={{ width: '75%', height: 20, background: 'var(--paper-2)', borderRadius: 6, marginBottom: 22 }} />
+                <div style={{ width: '45%', height: 14, background: 'var(--paper-2)', borderRadius: 6, marginBottom: 22 }} />
+                <div style={{ height: 1, background: 'var(--line)', margin: '0 0 14px' }} />
+                <div style={{ width: 90, height: 20, background: 'var(--paper-2)', borderRadius: 10 }} />
+              </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 0', gap: 16 }}>
             <div style={{ width: 72, height: 72, borderRadius: 20, background: 'var(--paper-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Icon name="bolt" size={32} />

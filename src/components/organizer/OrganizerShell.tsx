@@ -16,7 +16,7 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { id: 'events', label: 'Events', icon: 'bolt', href: '/organizer' },
-  { id: 'analytics', label: 'Analytics', icon: 'spark', href: '/organizer/analytics' },
+  // { id: 'analytics', label: 'Analytics', icon: 'spark', href: '/organizer/analytics' },
   { id: 'settings', label: 'Settings', icon: 'sliders', href: '/organizer/settings' },
 ];
 
@@ -27,15 +27,15 @@ export default function OrganizerShell({ children }: { children: React.ReactNode
   const [session, setSession] = useState<NexSession | null>(null);
 
   useEffect(() => {
-    setSession(getSession());
+    getSession().then(s => setSession(s));
   }, []);
 
   const email = session?.email ?? '';
   const name = session?.name ?? (email ? email.split('@')[0] : '—');
 
-  const handleLogout = () => {
-    clearSession();
-    router.push('/');
+  const handleLogout = async () => {
+    await clearSession();
+    window.location.href = '/';
   };
 
   return (

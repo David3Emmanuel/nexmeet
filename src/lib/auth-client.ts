@@ -13,27 +13,25 @@ function getCookie(name: string): string | null {
   return match ? decodeURIComponent(match[1]) : null
 }
 
-function parseJwt(token: string): Record<string, unknown> | null {
+export async function getSession(): Promise<NexSession | null> {
   try {
-    const payload = token.split('.')[1]
-    return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
+    const res = await fetch('/api/auth/session', { cache: 'no-store' })
+    if (!res.ok) return null
+    const data = await res.json()
+    if (!data.session || !data.session.email) return null
+    return { 
+      email: data.session.email, 
+      name: data.session.name || data.session.email.split('@')[0] 
+    }
   } catch {
     return null
   }
 }
 
-export function getSession(): NexSession | null {
-  const token = getCookie(COOKIE)
-  if (!token) return null
-  const payload = parseJwt(token)
-  if (!payload || !payload.email) return null
-  const exp = payload.exp as number | undefined
-  if (exp && exp * 1000 < Date.now()) return null
-  return { email: payload.email as string, name: payload.name as string | undefined }
-}
-
-export function clearSession(): void {
-  document.cookie = `${COOKIE}=; Max-Age=0; path=/`
+export async function clearSession(): Promise<void> {
+  try {
+    await fetch('/api/auth/session', { method: 'DELETE' })
+  } catch {}
 }
 
 export function markOnboarded(): void {

@@ -11,7 +11,7 @@ export async function GET() {
   if (org.rowCount === 0) return NextResponse.json({ events: [] })
 
   const { rows } = await pool.query(
-    `SELECT id, title, about, image_url, theme_config, match_times, matched
+    `SELECT id, slug, short_code, title, about, image_url, theme_config, match_times, matched
      FROM events WHERE organizer_id = $1 ORDER BY id DESC`,
     [org.rows[0].id],
   )
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { title, about, image_url, form_fields, theme_config, match_times } = body
+  const { title, about, image_url, form_fields, theme_config, match_times, date, venue } = body
 
   if (!title) return NextResponse.json({ error: 'title is required' }, { status: 400 })
 
@@ -36,10 +36,15 @@ export async function POST(req: NextRequest) {
   const org = await pool.query('SELECT id FROM organizers WHERE email = $1', [session.email])
   const organizerId = org.rows[0].id
 
+  const baseSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const slugSuffix = Math.random().toString(36).substring(2, 6);
+  const slug = baseSlug + '-' + slugSuffix;
+  const shortCode = Math.random().toString(36).substring(2, 7).toUpperCase();
+
   const { rows } = await pool.query(
-    `INSERT INTO events (organizer_id, title, about, image_url, form_fields, theme_config, match_times)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
-     RETURNING id`,
+    `INSERT INTO events (organizer_id, title, about, image_url, form_fields, theme_config, match_times, slug, short_code, event_date, venue)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+     RETURNING slug, short_code`,
     [
       organizerId,
       title,
@@ -48,8 +53,12 @@ export async function POST(req: NextRequest) {
       JSON.stringify(form_fields ?? []),
       JSON.stringify(theme_config ?? {}),
       JSON.stringify(match_times ?? []),
+      slug,
+      shortCode,
+      date ?? null,
+      venue ?? null
     ],
   )
 
-  return NextResponse.json({ event_id: rows[0].id }, { status: 201 })
+  return NextResponse.json({ event_id: rows[0].slug, short_code: rows[0].short_code }, { status: 201 })
 }

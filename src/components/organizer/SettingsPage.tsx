@@ -17,12 +17,13 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    const s = getSession();
-    if (s) {
-      setSession(s);
-      setEmail(s.email);
-      setName(s.name || s.email.split('@')[0]);
-    }
+    getSession().then(s => {
+      if (s) {
+        setSession(s);
+        setEmail(s.email);
+        setName(s.name || s.email.split('@')[0]);
+      }
+    });
   }, []);
 
   const handleSave = (e: React.FormEvent) => {

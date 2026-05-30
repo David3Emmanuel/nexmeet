@@ -34,17 +34,17 @@ export default function EventLanding({ event }: { event: EventData }) {
   }, [event.slug]);
 
   const displayEvent = localEvent || event;
-  const themeStyle = localEvent?.theme ? {
-    '--accent': localEvent.theme.accent,
-    '--paper': localEvent.theme.paper,
-    '--paper-2': localEvent.theme.paper2,
-    '--ink': localEvent.theme.ink,
-    '--ink-2': localEvent.theme.ink2,
-    '--ink-3': localEvent.theme.ink3,
-    '--card': localEvent.theme.card,
-    '--card-edge': localEvent.theme.cardEdge,
-    fontFamily: localEvent.theme.font === 'Outfit' ? 'var(--font-outfit), sans-serif' : 'var(--font-inter), sans-serif',
-  } as React.CSSProperties : {};
+  const dbTheme = displayEvent.theme || {};
+  
+  const bg = dbTheme.background || dbTheme.paper;
+  const fg = dbTheme.foreground || dbTheme.ink;
+  
+  const themeStyle = {
+    ...(dbTheme.accent ? { '--accent': dbTheme.accent } : {}),
+    ...(bg ? { '--paper': bg, '--paper-2': `color-mix(in srgb, ${bg} 95%, ${fg || '#000'})`, '--card': bg, '--card-edge': `color-mix(in srgb, ${bg} 90%, ${fg || '#000'})` } : {}),
+    ...(fg ? { '--ink': fg, '--ink-2': `color-mix(in srgb, ${fg} 80%, ${bg || '#fff'})`, '--ink-3': `color-mix(in srgb, ${fg} 50%, ${bg || '#fff'})` } : {}),
+    ...(dbTheme.fontFamily ? { fontFamily: dbTheme.fontFamily } : (dbTheme.font === 'Outfit' ? { fontFamily: 'var(--font-outfit), sans-serif' } : {})),
+  } as React.CSSProperties;
 
   return (
     <div style={{
@@ -86,8 +86,8 @@ export default function EventLanding({ event }: { event: EventData }) {
 
         {/* Custom Flyer */}
         {displayEvent.flyer && (
-          <div className="anim-up" style={{ marginTop: 24, borderRadius: 24, overflow: 'hidden', border: '1px solid var(--card-edge)' }}>
-            <img src={displayEvent.flyer} alt="Event flyer" style={{ width: '100%', maxHeight: 240, objectFit: 'cover', display: 'block' }} />
+          <div className="anim-up" style={{ marginTop: 24, borderRadius: 24, overflow: 'hidden', border: '1px solid var(--card-edge)', background: 'var(--paper-2)', display: 'flex', justifyContent: 'center' }}>
+            <img src={displayEvent.flyer} alt="Event flyer" style={{ width: '100%', height: 'auto', maxHeight: 400, objectFit: 'contain', display: 'block' }} />
           </div>
         )}
 
@@ -99,26 +99,36 @@ export default function EventLanding({ event }: { event: EventData }) {
           </h1>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--ink-2)', fontSize: 15 }}>
-              <Icon name="bolt" size={17} />
-              <span>{displayEvent.date || event.date}</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--ink-2)', fontSize: 15 }}>
-              <Icon name="location" size={17} />
-              <span>{displayEvent.venue || event.venue}</span>
-            </div>
+            {(displayEvent.date || event.date) && (displayEvent.date !== 'TBA' && event.date !== 'TBA') && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--ink-2)', fontSize: 15 }}>
+                <Icon name="bolt" size={17} />
+                <span>{displayEvent.date || event.date}</span>
+              </div>
+            )}
+            {(displayEvent.venue || event.venue) && (displayEvent.venue !== 'TBA' && event.venue !== 'TBA') && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--ink-2)', fontSize: 15 }}>
+                <Icon name="location" size={17} />
+                <span>{displayEvent.venue || event.venue}</span>
+              </div>
+            )}
           </div>
 
           {/* Attendee count */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ display: 'flex' }}>
-              {[0, 1, 2, 3].map(i => (
+              {Array.from({ length: Math.min((displayEvent.attendeeCount || event.attendeeCount || 0), 4) }).map((_, i) => (
                 <Avatar key={i} name={`P${i}`} color={AV[i % AV.length]} size={30}
                   style={{ marginLeft: i === 0 ? 0 : -10, border: '2px solid var(--paper)' }} />
               ))}
             </div>
             <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-2)' }}>
-              <strong style={{ color: 'var(--ink)' }}>{displayEvent.attendeeCount || event.attendeeCount}</strong> people already in the room
+              {(displayEvent.attendeeCount || event.attendeeCount || 0) > 0 ? (
+                <>
+                  <strong style={{ color: 'var(--ink)' }}>{displayEvent.attendeeCount || event.attendeeCount}</strong> people already in the room
+                </>
+              ) : (
+                "Be the first to join the room!"
+              )}
             </span>
           </div>
         </div>

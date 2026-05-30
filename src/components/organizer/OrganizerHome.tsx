@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from "react";
 import Avatar from '@/components/ui/Avatar';
 import Icon from '@/components/ui/Icon';
 import Logo from '@/components/ui/Logo';
@@ -26,13 +27,29 @@ function StatusPill({ status }: { status: string }) {
   );
 }
 
-const MY_EVENTS = [
-  { name: EVENT.name + " " + EVENT.edition, date: EVENT.date, status: "live", attendees: SEED.length + 6, accent: "var(--coral)", type: "hackathon" },
-  { name: "GDG DevFest Lagos", date: "Nov 16 · 2025", status: "ended", attendees: 312, accent: "var(--plum)", type: "conference" },
-  { name: "Founders Friday #08", date: "Apr 4 · 2026", status: "draft", attendees: 0, accent: "var(--forest)", type: "meetup" },
-];
-
 export default function OrganizerHome({ onCreate, onOpenEvent, onExit }: OrganizerHomeProps) {
+  const [events, setEvents] = useState<any[]>([]);
+  
+  useEffect(() => {
+    fetch('/api/events')
+      .then(res => res.json())
+      .then(data => {
+        if (data.events) {
+          const parsed = data.events.slice(0, 3).map((e: any) => ({
+            id: e.slug || e.id,
+            name: e.title,
+            date: e.match_times && e.match_times[0] ? new Date(e.match_times[0]).toLocaleDateString() : 'No date set',
+            status: e.matched ? 'ended' : 'live',
+            attendees: 0,
+            accent: (e.theme_config && typeof e.theme_config === 'string' ? JSON.parse(e.theme_config).accent : e.theme_config?.accent) || 'var(--coral)',
+            type: e.about?.slice(0, 20) || 'Event',
+          }));
+          setEvents(parsed);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
   return (
     <div className="org screen-enter">
       <div style={{ borderBottom: "1px solid var(--line)" }}>
@@ -66,10 +83,10 @@ export default function OrganizerHome({ onCreate, onOpenEvent, onExit }: Organiz
 
         <div className="row between" style={{ alignItems: "center", margin: "34px 0 14px" }}>
           <h2 className="display" style={{ fontSize: 22 }}>Your events</h2>
-          <span style={{ fontSize: 13, color: "var(--ink-3)", fontWeight: 600 }}>{MY_EVENTS.length} total</span>
+          <span style={{ fontSize: 13, color: "var(--ink-3)", fontWeight: 600 }}>{events.length} total</span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
-          {MY_EVENTS.map((e) => {
+          {events.map((e: any) => {
             const live = e.status === "live";
             return (
               <button key={e.name} onClick={() => live && onOpenEvent(e)} className="panel" style={{ padding: 22, textAlign: "left", cursor: live ? "pointer" : "default", opacity: e.status === "draft" ? .72 : 1 }}>

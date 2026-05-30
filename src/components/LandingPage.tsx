@@ -8,6 +8,7 @@ import Logo from '@/components/ui/Logo';
 import Icon from '@/components/ui/Icon';
 import PhoneShell from '@/components/PhoneShell';
 import CoverScreen from '@/components/attendee/CoverScreen';
+import { getSession } from '@/lib/auth-client';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -48,6 +49,10 @@ export default function LandingPage() {
   const stepsRef = useRef<HTMLDivElement>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [heroEmail, setHeroEmail] = useState('');
+  const [joinCode, setJoinCode] = useState('');
+  const [session, setSession] = useState<any>(null);
+  const [joinError, setJoinError] = useState('');
+  const [isJoining, setIsJoining] = useState(false);
 
   const handleGetStarted = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +61,26 @@ export default function LandingPage() {
     }
   };
 
+  const handleJoinEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setJoinError('');
+    if (!joinCode.trim()) return;
+    
+    setIsJoining(true);
+    try {
+      const res = await fetch(`/api/events/resolve?code=${encodeURIComponent(joinCode.trim())}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Event not found');
+      router.push(`/e/${data.slug}`);
+    } catch (err: any) {
+      setJoinError(err.message || 'Invalid code');
+      setIsJoining(false);
+    }
+  };
+
   useEffect(() => {
+    getSession().then(s => setSession(s));
+    
     const ctx = gsap.context(() => {
       // Hero text entrance
       gsap.from('.hero-word', {
@@ -106,10 +130,10 @@ export default function LandingPage() {
             <button
               id="nav-signin"
               className="btn nav-signin-btn"
-              onClick={() => router.push('/auth')}
+              onClick={() => router.push(session ? '/organizer' : '/auth')}
               style={{ fontWeight: 700, minHeight: 44, paddingInline: 22, fontSize: 15 }}
             >
-              Sign in
+              {session ? 'Dashboard' : 'Sign in'}
             </button>
           </div>
         </div>
@@ -154,26 +178,49 @@ export default function LandingPage() {
             Set up in 2 minutes. Go live instantly.
           </p>
 
-          <div className="hero-word" style={{ maxWidth: 580, margin: '0 auto' }}>
-            <p style={{ fontSize: 16, color: 'rgba(255, 255, 255, 0.65)', fontWeight: 700, marginBottom: 12 }}>
-              Ready to connect? Enter your email to create your room.
-            </p>
-            <form onSubmit={handleGetStarted} className="hero-email-form">
-              <input
-                type="email"
-                placeholder="Email address"
-                value={heroEmail}
-                onChange={e => setHeroEmail(e.target.value)}
-                required
-                className="hero-email-input"
-              />
-              <button
-                type="submit"
-                className="hero-get-started-btn"
-              >
-                Get Started <Icon name="arrow" size={18} />
-              </button>
-            </form>
+          <div className="hero-word" style={{ maxWidth: 580, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {/* Create Room Block */}
+            <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 24, padding: '24px 32px' }}>
+              <p style={{ fontSize: 16, color: 'rgba(255, 255, 255, 0.8)', fontWeight: 700, marginBottom: 16 }}>
+                Create a new event
+              </p>
+              <form onSubmit={handleGetStarted} className="hero-email-form">
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={heroEmail}
+                  onChange={e => setHeroEmail(e.target.value)}
+                  required
+                  className="hero-email-input"
+                />
+                <button type="submit" className="hero-get-started-btn">
+                  Start <Icon name="arrow" size={18} />
+                </button>
+              </form>
+            </div>
+
+            {/* Join Room Block */}
+            <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 24, padding: '24px 32px' }}>
+              <p style={{ fontSize: 16, color: 'rgba(255, 255, 255, 0.8)', fontWeight: 700, marginBottom: 16 }}>
+                Join an existing event
+              </p>
+              <form onSubmit={handleJoinEvent} className="hero-email-form">
+                <input
+                  type="text"
+                  placeholder="Enter 4-letter code (e.g. X8M2)"
+                  value={joinCode}
+                  onChange={e => setJoinCode(e.target.value)}
+                  required
+                  className="hero-email-input"
+                  style={{ textTransform: 'uppercase' }}
+                  maxLength={10}
+                />
+                <button type="submit" className="hero-get-started-btn" style={{ background: 'var(--paper-2)', color: '#fff' }} disabled={isJoining}>
+                  {isJoining ? 'Joining...' : 'Join'} <Icon name="arrow" size={18} />
+                </button>
+              </form>
+              {joinError && <div style={{ color: 'var(--coral)', fontSize: 13, marginTop: 10, fontWeight: 600 }}>{joinError}</div>}
+            </div>
           </div>
         </div>
       </section>

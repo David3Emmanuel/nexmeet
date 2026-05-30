@@ -32,7 +32,7 @@ export async function generateTheme(flyerUrl: string): Promise<GeneratedTheme> {
     const { data, mimeType } = await fetchFlyerAsBase64(flyerUrl)
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.5-flash',
+      model: 'gemini-2.5-flash',
       contents: [
         { inlineData: { mimeType, data } },
         { text: buildThemePrompt() },

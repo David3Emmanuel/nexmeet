@@ -13,15 +13,21 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'name and email are required' }, { status: 400 })
   }
 
-  // Verify event exists
-  const event = await pool.query('SELECT id, title FROM events WHERE id = $1', [id])
+  // Verify event exists by id, slug, or short_code
+  const event = await pool.query(
+    `SELECT id, title FROM events 
+     WHERE id::text = $1 OR slug = $1 OR upper(short_code) = upper($1)`, 
+    [id]
+  )
   if (event.rowCount === 0) return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+
+  const eventId = event.rows[0].id
 
   const { rows } = await pool.query(
     `INSERT INTO attendees (event_id, name, email, phone, responses)
      VALUES ($1, $2, $3, $4, $5)
      RETURNING id, auth_token`,
-    [id, name, email, phone ?? null, JSON.stringify(responses ?? {})],
+    [eventId, name, email, phone ?? null, JSON.stringify(responses ?? {})],
   )
 
   const { auth_token } = rows[0]
@@ -40,5 +46,5 @@ export async function POST(req: NextRequest, { params }: Params) {
     `,
   })
 
-  return NextResponse.json({ success: true })
+  return NextResponse.json({ success: true, auth_token })
 }

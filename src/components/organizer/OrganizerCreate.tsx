@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import Icon from '@/components/ui/Icon';
 import QrCode from '@/components/ui/QrCode';
 import ImageDrop from '@/components/ui/ImageDrop';
@@ -47,6 +48,7 @@ function baseQuestions(type: string) {
 }
 
 interface Details {
+  id?: string;
   title: string;
   about: string;
   type: string;
@@ -54,6 +56,7 @@ interface Details {
   venue: string;
   flyer?: string | null;
   matchCount?: string;
+  short_code?: string;
 }
 
 interface Timing { mode: string; when: string; }
@@ -286,7 +289,7 @@ function StepGenerating({ details }: { details: Details }) {
 }
 
 function StepReview({ details, themeObj, themeId, onTheme, questions, setQuestions }: {
-  details: Details; themeObj: typeof THEMES[0]; themeId: string;
+  details: Details; themeObj: any; themeId: string;
   onTheme: (id: string) => void; questions: Question[]; setQuestions: (qs: Question[]) => void;
 }) {
   const [editing, setEditing] = useState<string | null>(null);
@@ -308,11 +311,11 @@ const removeQ = (id: string) => setQuestions(questions.filter(q => q.id !== id))
             <h3 className="display" style={{ fontSize: 19 }}>AI Design Studio</h3>
             <span style={{ fontSize: 12.5, color: "var(--ink-3)", fontWeight: 600 }}>Extracted from flyer</span>
           </div>
-          <div style={{ borderRadius: 18, overflow: "hidden", border: "1px solid var(--card-edge)", marginBottom: 16 }}>
-            <div style={{ background: themeObj.accent, padding: 18, color: "#fff" }}>
-              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: ".14em", textTransform: "uppercase", opacity: .8 }}>{details.type}</div>
+          <div style={{ borderRadius: 18, overflow: "hidden", border: "1px solid var(--card-edge)", marginBottom: 16, fontFamily: themeObj.font || themeObj.fontFamily || 'inherit' }}>
+            <div style={{ background: themeObj.background || themeObj.accent, padding: 18, color: themeObj.foreground || '#fff' }}>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: ".14em", textTransform: "uppercase", opacity: .8, color: themeObj.accent || 'inherit' }}>{details.type}</div>
               <div className="display" style={{ fontSize: 22, marginTop: 6 }}>{details.title || "Your event"}</div>
-              <div style={{ marginTop: 12, display: "inline-flex", padding: "7px 14px", borderRadius: 999, background: "rgba(255,255,255,.2)", fontSize: 13, fontWeight: 700 }}>Find my people →</div>
+              <div style={{ marginTop: 12, display: "inline-flex", padding: "7px 14px", borderRadius: 999, background: themeObj.accent, color: themeObj.accentForeground || '#fff', fontSize: 13, fontWeight: 700 }}>Find my people →</div>
             </div>
           </div>
           <p className="lead" style={{ fontSize: 13, marginTop: 12, lineHeight: 1.5 }}>
@@ -384,12 +387,34 @@ function StepTiming({ timing, setTiming, details }: { timing: Timing; setTiming:
           <input className="input" type="datetime-local" value={timing.when} onChange={e => setTiming({ ...timing, when: e.target.value })} style={{ marginTop: 8, maxWidth: 280 }} />
         </div>
       )}
+      {timing.mode === "during" && (
+        <div className="screen-enter panel" style={{ padding: 20, marginTop: 16 }}>
+          <span className="field-label">Run matching engine every</span>
+          <select className="input" value={timing.when || '30'} onChange={e => setTiming({ ...timing, when: e.target.value })} style={{ marginTop: 8, maxWidth: 280 }}>
+            <option value="10">10 minutes</option>
+            <option value="15">15 minutes</option>
+            <option value="30">30 minutes</option>
+            <option value="45">45 minutes</option>
+            <option value="60">1 hour</option>
+          </select>
+        </div>
+      )}
     </div>
   );
 }
 
-function StepLive({ details, themeObj, onLaunch }: { details: Details; themeObj: typeof THEMES[0]; onLaunch: () => void }) {
-  const slug = (details.title || "your-event").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 22);
+function StepLive({ details, themeObj, onLaunch }: { details: Details; themeObj: typeof THEMES[0] | any; onLaunch: () => void }) {
+  const eventId = details.id || 'draft';
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    const url = `${typeof window !== 'undefined' ? window.location.origin : 'https://nexmeet.app'}/e/${eventId}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    toast.success('Link copied to clipboard');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className="screen-enter" style={{ maxWidth: 560, margin: "0 auto", textAlign: "center", padding: "20px 0 40px" }}>
       <div style={{ width: 64, height: 64, borderRadius: "50%", background: "var(--forest)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", animation: "pop .5s var(--pop)" }}><Icon name="check" size={32} stroke={3} /></div>
@@ -398,13 +423,17 @@ function StepLive({ details, themeObj, onLaunch }: { details: Details; themeObj:
       <p className="lead" style={{ fontSize: 15, marginTop: 12, marginBottom: 26 }}>Share the QR or link anywhere — screen, print, or the group chat. Matches start the moment people sign up.</p>
       <div className="panel" style={{ padding: 26, display: "inline-block" }}>
         <div style={{ display: "inline-block", padding: 16, background: "var(--paper-2)", borderRadius: 22 }}>
-          <QrCode seed={slug} size={170} />
+          <QrCode seed={eventId} size={170} />
         </div>
-        <div className="display" style={{ fontSize: 19, marginTop: 16 }}>nexmeet.app/e/{slug}</div>
-        <div className="lead" style={{ fontSize: 13, marginTop: 4 }}>Scan to join · no login needed</div>
+        <div className="display" style={{ fontSize: 19, marginTop: 16 }}>{typeof window !== 'undefined' ? window.location.host : 'nexmeet.app'}/e/{eventId}</div>
+        <div className="lead" style={{ fontSize: 14, marginTop: 8 }}>
+          Or enter code: <strong style={{ letterSpacing: '0.05em', color: 'var(--accent)', background: 'color-mix(in srgb, var(--accent) 15%, transparent)', padding: '2px 8px', borderRadius: 6 }}>{details.short_code || (eventId.includes('-') ? eventId.split('-').pop()?.toUpperCase() : eventId.slice(0, 6).toUpperCase())}</strong>
+        </div>
       </div>
       <div className="row gap10 center" style={{ marginTop: 26 }}>
-        <button type="button" className="btn btn-ghost"><Icon name="copy" size={18} /> Copy link</button>
+        <button type="button" className="btn btn-ghost" onClick={handleCopy} style={{ width: 130 }}>
+          {copied ? <span style={{ color: 'var(--forest)', display: 'flex', alignItems: 'center', gap: 6, animation: 'pop 0.3s var(--pop)' }}><Icon name="check" size={18} /> Copied!</span> : <span style={{ display: 'flex', alignItems: 'center', gap: 6, animation: 'pop 0.3s var(--pop)' }}><Icon name="copy" size={18} /> Copy link</span>}
+        </button>
         <button type="button" className="btn btn-primary" onClick={onLaunch}><Icon name="grid" size={18} /> Open live dashboard</button>
       </div>
     </div>
@@ -422,26 +451,103 @@ export default function OrganizerCreate({ defaults, applyTheme, onHome, onExit, 
     flyer: defaults?.flyer || null,
   });
   const [theme, setTheme] = useState("ember");
+  const [generatedTheme, setGeneratedTheme] = useState<any>(null);
   const [questions, setQuestions] = useState<Question[]>(baseQuestions("hackathon"));
   const [timing, setTiming] = useState<Timing>({ mode: "during", when: "" });
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (step !== 1) return;
-    const picked = TYPE_THEME[details.type] || "ember";
-    const t = setTimeout(() => {
-      setTheme(picked);
-      setQuestions(baseQuestions(details.type));
-      applyTheme(THEMES.find(x => x.id === picked));
-      setStep(2);
-    }, 2600);
-    return () => clearTimeout(t);
+    let isCancelled = false;
+    
+    const runAI = async () => {
+      try {
+        const [themeRes, qsRes] = await Promise.all([
+          fetch('/api/events/generate/theme', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: details.title, about: details.about, image_url: details.flyer || 'https://res.cloudinary.com/dnntjb4a8/image/upload/v1730000000/placeholder.png' })
+          }),
+          fetch('/api/events/generate/questions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: details.title, about: details.about })
+          })
+        ]);
+        
+        if (isCancelled) return;
+        
+        const themeData = await themeRes.json();
+        const qsData = await qsRes.json();
+        
+        const tc = themeData.theme_config;
+        if (tc) {
+          setGeneratedTheme({
+            id: 'generated', name: tc.mood || 'AI Custom', accent: tc.accent, font: tc.fontFamily, fontFamily: tc.fontFamily,
+            foreground: tc.foreground, background: tc.background, accentForeground: tc.accentForeground
+          });
+          applyTheme({ accent: tc.accent, font: tc.fontFamily, ...tc });
+        } else {
+          const picked = TYPE_THEME[details.type] || "ember";
+          setTheme(picked);
+          applyTheme(THEMES.find(x => x.id === picked));
+        }
+        
+        const newQs: Question[] = baseQuestions(details.type);
+        if (qsData.form_fields && Array.isArray(qsData.form_fields)) {
+           qsData.form_fields.forEach((f: any) => {
+             newQs.push({ id: (f.id || f.question).toLowerCase().replace(/[^a-z0-9]/g, ''), q: f.question, on: true, custom: true });
+           });
+        }
+        setQuestions(newQs);
+        setStep(2);
+      } catch (err) {
+        console.error(err);
+        const picked = TYPE_THEME[details.type] || "ember";
+        setTheme(picked);
+        setQuestions(baseQuestions(details.type));
+        applyTheme(THEMES.find(x => x.id === picked));
+        setStep(2);
+      }
+    };
+    runAI();
+    return () => { isCancelled = true; };
   }, [step]);
 
   const set = (k: string, v: string) => setDetails(d => ({ ...d, [k]: v }));
   const detailsValid = details.title.trim() && details.about.trim() && details.date.trim() && details.venue.trim();
-  const themeObj = THEMES.find(x => x.id === theme) || THEMES[0];
+  const themeObj = generatedTheme || THEMES.find(x => x.id === theme) || THEMES[0];
 
   const goBack = () => { if (step === 0) (onHome || onExit)(); else if (step === 2) setStep(0); else setStep(s => s - 1); };
+
+  const handleLaunch = async () => {
+    setIsSaving(true);
+    const toastId = toast.loading('Launching event...');
+    const matchTimes = timing.mode === 'before' && timing.when ? [new Date(timing.when).toISOString()] : [];
+    try {
+      const res = await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: details.title,
+          about: details.about,
+          image_url: details.flyer,
+          form_fields: questions.filter(q => q.on).map(q => ({ name: q.id, label: q.q, type: 'text', required: !!q.locked })),
+          theme_config: themeObj,
+          match_times: matchTimes
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create event');
+      setDetails({ ...details, id: data.event_id, short_code: data.short_code });
+      toast.success('Event launched successfully!', { id: toastId });
+      setStep(4);
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to launch event', { id: toastId });
+    }
+    setIsSaving(false);
+  };
 
   return (
     <div className="org screen-enter" style={{ display: "flex", flexDirection: "column", height: '100%' }}>
@@ -472,10 +578,6 @@ export default function OrganizerCreate({ defaults, applyTheme, onHome, onExit, 
           {step === 2 && <StepReview details={details} themeObj={themeObj} themeId={theme} onTheme={(id) => { setTheme(id); applyTheme(THEMES.find(x => x.id === id)); }} questions={questions} setQuestions={setQuestions} />}
           {step === 3 && <StepTiming timing={timing} setTiming={setTiming} details={details} />}
           {step === 4 && <StepLive details={details} themeObj={themeObj} onLaunch={() => {
-            if (typeof window !== 'undefined') {
-              const slug = (details.title || "your-event").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 22);
-              localStorage.setItem(`nexmeet:event:${slug}`, JSON.stringify({ ...details, theme: themeObj }));
-            }
             onLaunch(details);
           }} />}
         </div>
@@ -487,7 +589,7 @@ export default function OrganizerCreate({ defaults, applyTheme, onHome, onExit, 
             <button type="button" className="btn btn-ghost" onClick={goBack}><Icon name="back" size={18} /> Back</button>
             {step === 0 && <button type="button" className="btn btn-primary" disabled={!detailsValid} onClick={() => setStep(1)} style={{ opacity: detailsValid ? 1 : .4 }}><Icon name="spark" size={18} /> Generate with AI</button>}
             {step === 2 && <button type="button" className="btn btn-primary" onClick={() => setStep(3)}>Looks good <Icon name="arrow" size={18} /></button>}
-            {step === 3 && <button type="button" className="btn btn-primary" onClick={() => setStep(4)}><Icon name="bolt" size={18} /> Launch event</button>}
+            {step === 3 && <button type="button" className="btn btn-primary" onClick={handleLaunch} disabled={isSaving}>{isSaving ? 'Launching...' : <><Icon name="bolt" size={18} /> Launch event</>}</button>}
           </div>
         </div>
       )}

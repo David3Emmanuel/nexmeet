@@ -4,16 +4,48 @@ import { getSession } from '@/lib/auth'
 
 type Params = { params: Promise<{ id: string }> }
 
-export async function GET(_req: NextRequest, { params }: Params) {
+export async function GET(req: NextRequest, { params }: Params) {
+  const { id } = await params
+  const { searchParams } = new URL(req.url)
+  const authToken = searchParams.get('auth_token')
+
+  // Attendee flow
+  if (authToken) {
+    const attendee = await pool.query(
+      `SELECT a.id, e.id as event_id FROM attendees a
+       JOIN events e ON e.id = a.event_id
+       WHERE a.auth_token = $1 AND (e.slug = $2 OR e.id::text = $2 OR upper(e.short_code) = upper($2))`,
+      [authToken, id]
+    )
+    if (attendee.rowCount === 0) return NextResponse.json({ error: 'Unauthorized attendee' }, { status: 401 })
+
+    const attendeeId = attendee.rows[0].id
+    const eventId = attendee.rows[0].event_id
+
+    // Fetch matches involving this attendee
+    const { rows } = await pool.query(
+      `SELECT m.id,
+              CASE WHEN m.attendee_a_id = $1 THEN b.id ELSE a.id END AS matched_id,
+              CASE WHEN m.attendee_a_id = $1 THEN b.name ELSE a.name END AS matched_name,
+              CASE WHEN m.attendee_a_id = $1 THEN b.responses ELSE a.responses END AS matched_responses
+       FROM matches m
+       JOIN attendees a ON a.id = m.attendee_a_id
+       JOIN attendees b ON b.id = m.attendee_b_id
+       WHERE m.event_id = $2 AND (m.attendee_a_id = $1 OR m.attendee_b_id = $1)`,
+      [attendeeId, eventId]
+    )
+
+    return NextResponse.json({ matches: rows })
+  }
+
+  // Organizer flow
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { id } = await params
 
   const owned = await pool.query(
     `SELECT e.id FROM events e
      JOIN organizers o ON o.id = e.organizer_id
-     WHERE e.id = $1 AND o.email = $2`,
+     WHERE (e.slug = $1 OR e.id::text = $1) AND o.email = $2`,
     [id, session.email],
   )
   if (owned.rowCount === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -27,7 +59,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
      JOIN attendees b ON b.id = m.attendee_b_id
      WHERE m.event_id = $1
      ORDER BY a.name, b.name`,
-    [id],
+    [owned.rows[0].id],
   )
 
   return NextResponse.json({ matches: rows, total: rows.length })

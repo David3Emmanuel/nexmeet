@@ -23,10 +23,15 @@ export const metadata: Metadata = {
   },
 };
 
+import { Toaster } from 'sonner';
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        <Toaster position="bottom-right" richColors />
+      </body>
     </html>
   );
 }

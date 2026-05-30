@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState } from 'react'
+import { use, useState, useEffect, useRef } from 'react'
 import FormScreen from '@/components/attendee/FormScreen'
 import FindingScreen from '@/components/attendee/FindingScreen'
 import MatchesScreen from '@/components/attendee/MatchesScreen'
@@ -9,7 +9,6 @@ import ShareSheet from '@/components/attendee/ShareSheet'
 import MapScreen from '@/components/attendee/MapScreen'
 import BottomNav from '@/components/attendee/BottomNav'
 import { useRouter } from 'next/navigation'
-import { DEMO_YOU, SEED, Match, YouProfile, generateMatches } from '@/lib/data'
 
 type Screen = 'form' | 'finding' | 'matches' | 'detail' | 'map'
 
@@ -21,27 +20,108 @@ export default function JoinPage({
   const { slug } = use(params)
   const router = useRouter()
   const [screen, setScreen] = useState<Screen>('form')
-  const [you, setYou] = useState<YouProfile>(DEMO_YOU)
-  const [matches, setMatches] = useState<Match[]>([])
-  const [active, setActive] = useState<Match | null>(null)
+  const [you, setYou] = useState<any>({ name: '', email: '', responses: {} })
+  const [matches, setMatches] = useState<any[]>([])
+  const [active, setActive] = useState<any | null>(null)
   const [share, setShare] = useState(false)
   const [met, setMet] = useState<Record<string, boolean>>({})
   const [locGranted, setLocGranted] = useState(false)
-  const [roomCount, setRoomCount] = useState(SEED.length + 1)
+  const [authToken, setAuthToken] = useState<string | null>(null)
+  
+  // Track if we are currently polling to avoid overlapping requests
+  const pollingRef = useRef(false)
 
-  const submit = (profile: YouProfile) => {
-    setYou(profile)
-    setScreen('finding')
-    setMatches(generateMatches(profile, SEED))
+  useEffect(() => {
+    // Check if we already have a token
+    const token = localStorage.getItem(`nexmeet:token:${slug}`)
+    if (token) {
+      setAuthToken(token)
+      // Check if already matched
+      checkMatchStatus(token)
+    }
+  }, [slug])
+
+  const checkMatchStatus = async (token: string) => {
+    try {
+      const res = await fetch(`/api/events/${slug}`)
+      const data = await res.json()
+      if (data.matched) {
+        await fetchMatches(token)
+      } else {
+        setScreen('finding')
+      }
+    } catch (e) {}
   }
 
-  const refresh = () => {
-    setRoomCount((c) => c + 3)
-    setMatches(generateMatches(you, SEED))
+  const fetchMatches = async (token: string) => {
+    try {
+      const res = await fetch(`/api/events/${slug}/matches?auth_token=${token}`)
+      const data = await res.json()
+      if (data.matches) {
+        // Map DB matches to frontend format
+        const mappedMatches = data.matches.map((m: any, i: number) => ({
+          id: m.id,
+          name: m.matched_name,
+          color: ['var(--plum)', 'var(--forest)', 'var(--sky)', 'var(--tangerine)', 'var(--berry)'][i % 5],
+          reason: m.matched_responses?.looking_for || 'Great potential connection based on your profiles.',
+          score: 90 + (i % 10),
+          lookingFor: m.matched_responses?.looking_for || '',
+          answers: m.matched_responses || {}
+        }))
+        setMatches(mappedMatches)
+        setScreen('matches')
+      }
+    } catch (e) {}
+  }
+
+  // Polling effect while on finding screen
+  useEffect(() => {
+    if (screen !== 'finding' || !authToken) return
+    
+    const id = setInterval(async () => {
+      if (pollingRef.current) return
+      pollingRef.current = true
+      try {
+        const res = await fetch(`/api/events/${slug}`)
+        const data = await res.json()
+        if (data.matched) {
+          clearInterval(id)
+          await fetchMatches(authToken)
+        }
+      } catch (e) {}
+      finally {
+        pollingRef.current = false
+      }
+    }, 3000)
+    
+    return () => clearInterval(id)
+  }, [screen, authToken, slug])
+
+  const submit = async (profile: any) => {
+    setYou(profile)
+    setScreen('finding')
+    
+    try {
+      const res = await fetch(`/api/events/${slug}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: profile.name,
+          email: profile.email || `${profile.name.replace(/\s/g, '').toLowerCase()}${Math.random().toString().substring(2,6)}@example.com`,
+          responses: profile.answers,
+        }),
+      })
+      const data = await res.json()
+      if (data.auth_token) {
+        setAuthToken(data.auth_token)
+        localStorage.setItem(`nexmeet:token:${slug}`, data.auth_token)
+      }
+    } catch (e) {
+      console.error(e)
+    }
   }
 
   return (
-    /* Responsive attendee container — no phone shell */
     <div
       style={{
         minHeight: '100vh',
@@ -51,7 +131,6 @@ export default function JoinPage({
         alignItems: 'center',
       }}
     >
-      {/* Constrained content column */}
       <div
         style={{
           width: '100%',
@@ -71,7 +150,7 @@ export default function JoinPage({
           />
         )}
         {screen === 'finding' && (
-          <FindingScreen you={you} onDone={() => setScreen('matches')} />
+          <FindingScreen you={you} onDone={() => { /* now driven by polling */ }} />
         )}
         {(screen === 'matches' || screen === 'map') && (
           <div
@@ -94,13 +173,13 @@ export default function JoinPage({
                 <MatchesScreen
                   you={you}
                   matches={matches}
-                  count={roomCount}
+                  count={matches.length}
                   onOpen={(m) => {
                     setActive(m)
                     setScreen('detail')
                   }}
                   onMap={() => setScreen('map')}
-                  onRefresh={refresh}
+                  onRefresh={() => fetchMatches(authToken!)}
                   onRestart={() => router.push(`/e/${slug}`)}
                 />
               )}
