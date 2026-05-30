@@ -108,38 +108,57 @@ export default function OrganizerDashboard({ eventId, onExit, onNewEvent, onHome
   const [pulse, setPulse] = useState<string | null>(null);
   const [isMatching, setIsMatching] = useState(false);
   const [matchesMade, setMatchesMade] = useState(0);
+  // Real UUID resolved from the event — used for all auth-gated requests.
+  const [resolvedId, setResolvedId] = useState<string | null>(null);
 
+  // Step 1: fetch event (public) to get real UUID and metadata.
   useEffect(() => {
-    fetch(`/api/events/${eventId}`)
+    fetch(`/api/events/${eventId}`, { credentials: 'include' })
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d) setEventData(d); })
+      .then(d => {
+        if (d) {
+          setEventData(d);
+          setResolvedId(d.id);          // d.id is always the UUID
+          if (d.matched) setMatchesMade(d.match_count ?? 0);
+        }
+      })
       .catch(console.error);
-      
-    // Simplified polling
+  }, [eventId]);
+
+  // Step 2: poll attendees only once we have the UUID.
+  useEffect(() => {
+    if (!resolvedId) return;
+
     const fetchAttendees = () => {
-      fetch(`/api/events/${eventId}/attendees`)
+      fetch(`/api/events/${resolvedId}/attendees`, { credentials: 'include' })
         .then(r => r.ok ? r.json() : null)
         .then(data => {
-          if (data && data.attendees) {
-             setAttendees(data.attendees);
-             setCount(data.total);
+          if (data?.attendees) {
+            setAttendees(prev => {
+              // Detect new joiners for the "just joined" pulse notification.
+              const prevIds = new Set(prev.map((a: any) => a.id));
+              const newOne = data.attendees.find((a: any) => !prevIds.has(a.id));
+              if (newOne && prev.length > 0) setPulse(newOne.name);
+              return data.attendees;
+            });
+            setCount(data.total);
           }
         })
         .catch(console.error);
     };
-    
+
     fetchAttendees();
-    const id = setInterval(fetchAttendees, 8000);
-    return () => clearInterval(id);
-  }, [eventId]);
+    const timer = setInterval(fetchAttendees, 8000);
+    return () => clearInterval(timer);
+  }, [resolvedId]);
 
   const evName = eventData?.title || 'Loading...';
 
-  const fetchMatches = () => {
-    fetch(`/api/events/${eventId}/matches`)
+  const fetchMatches = (id: string) => {
+    fetch(`/api/events/${id}/matches`, { credentials: 'include' })
       .then(r => r.ok ? r.json() : null)
       .then(data => {
-        if (data && data.matches) {
+        if (data?.matches) {
           setMatchPairs(data.matches);
           setMatchesMade(data.total ?? data.matches.length);
         }
@@ -148,22 +167,24 @@ export default function OrganizerDashboard({ eventId, onExit, onNewEvent, onHome
   };
 
   useEffect(() => {
-    if (eventData?.matched) fetchMatches();
-  }, [eventData?.matched, eventId]);
+    if (eventData?.matched && resolvedId) fetchMatches(resolvedId);
+  }, [eventData?.matched, resolvedId]);
 
   const triggerMatch = async () => {
     if (count < 2) {
       toast.error('Not enough attendees', { description: 'At least 2 people need to join before curating connections.' });
       return;
     }
+    if (!resolvedId) return;
     setIsMatching(true);
     const toastId = toast.loading('Running AI curation engine...');
     try {
-      const res = await fetch(`/api/events/${eventId}/match`, { method: 'POST' });
+      const res = await fetch(`/api/events/${resolvedId}/match`, { method: 'POST', credentials: 'include' });
       const data = await res.json();
       if (data.matched) {
-        setEventData({ ...eventData, matched: true });
+        setEventData((prev: any) => ({ ...prev, matched: true }));
         setMatchesMade(data.matched);
+        fetchMatches(resolvedId);
         toast.success(`Curated ${data.matched} connections!`, { id: toastId, description: 'The connections are now live.' });
       } else {
         toast.info('No new connections', { id: toastId, description: 'Everyone has been connected.' });
