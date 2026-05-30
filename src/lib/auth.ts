@@ -1,14 +1,18 @@
+'use server'
+
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 
 const SECRET = process.env.AUTH_SECRET!
 const COOKIE = 'nexmeet_session'
 
-export function signToken(email: string): string {
+export async function signToken(email: string): Promise<string> {
   return jwt.sign({ email }, SECRET, { expiresIn: '7d' })
 }
 
-export function verifyToken(token: string): { email: string } | null {
+export async function verifyToken(
+  token: string,
+): Promise<{ email: string } | null> {
   try {
     return jwt.verify(token, SECRET) as { email: string }
   } catch {
@@ -23,7 +27,7 @@ export async function getSession(): Promise<{ email: string } | null> {
   return verifyToken(token)
 }
 
-export function sessionCookieOptions() {
+export async function sessionCookieOptions() {
   return {
     name: COOKIE,
     httpOnly: true,
