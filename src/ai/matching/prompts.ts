@@ -1,4 +1,4 @@
-import { Attendee, FormQuestion } from "../types";
+import { MatchAttendee, FormQuestion } from "@/lib/types";
 
 // Questions are rendered ONCE per prompt as shared context (change #1).
 function formatQuestionsHeader(questions: FormQuestion[]): string {
@@ -7,7 +7,7 @@ function formatQuestionsHeader(questions: FormQuestion[]): string {
 
 // Each attendee renders as answers only, keyed by question id. No repeated
 // question text, which is what keeps large rooms from blowing up token cost.
-function formatAttendee(a: Attendee, questions: FormQuestion[]): string {
+function formatMatchAttendee(a: MatchAttendee, questions: FormQuestion[]): string {
   const lines = questions.map(
     (q) => `  ${q.id}: ${a.answers[q.id]?.trim() || "(no answer)"}`
   );
@@ -18,8 +18,8 @@ function formatAttendee(a: Attendee, questions: FormQuestion[]): string {
 }
 
 export function buildMatchPrompt(
-  focal: Attendee,
-  candidates: Attendee[],
+  focal: MatchAttendee,
+  candidates: MatchAttendee[],
   questions: FormQuestion[],
   target: number
 ): string {
@@ -29,10 +29,10 @@ Each person answered these questions (referenced by id below):
 ${formatQuestionsHeader(questions)}
 
 THE ATTENDEE YOU ARE MATCHING:
-${formatAttendee(focal, questions)}
+${formatMatchAttendee(focal, questions)}
 
 CANDIDATES (everyone else in the room):
-${candidates.map((c) => formatAttendee(c, questions)).join("\n\n")}
+${candidates.map((c) => formatMatchAttendee(c, questions)).join("\n\n")}
 
 Decide who is genuinely worth this attendee's time. Around ${target} is typical, but that is only a guide:
 - Include MORE if there are genuinely more strong, high-value matches in the room.
@@ -49,8 +49,8 @@ Only use candidate ids from the list above.`;
 // owner = whose card we're adding to (reason addressed to them).
 // target = the person being added.
 export function buildReasonPrompt(
-  owner: Attendee,
-  target: Attendee,
+  owner: MatchAttendee,
+  target: MatchAttendee,
   questions: FormQuestion[]
 ): string {
   return `You are the matchmaking engine for NexMeet at a live event. ${target.name} already wants to meet ${owner.name}, so they will appear on ${owner.name}'s card too.
@@ -61,8 +61,8 @@ ${formatQuestionsHeader(questions)}
 Write ONE specific reason (1-2 sentences) telling ${owner.name} why meeting ${target.name} is worth their time. Speak TO ${owner.name} about ${target.name}. Reference concrete details from both profiles. Focus on mutual value and complementary fit, never generic filler.
 
 ${owner.name} (the person reading this):
-${formatAttendee(owner, questions)}
+${formatMatchAttendee(owner, questions)}
 
 ${target.name} (the person to meet):
-${formatAttendee(target, questions)}`;
+${formatMatchAttendee(target, questions)}`;
 }

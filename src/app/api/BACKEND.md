@@ -81,7 +81,7 @@ Stores organizer configurations and generated metadata.
 - `about`: Text
 - `image_url`: String (Pointer to external storage)
 - `form_fields`: JSON (Base fields + up to 5 AI-generated fields)
-- `theme_config`: JSON (`{ foreground, background, accent, fontFamily }`)
+- `theme_config`: JSON (`{ foreground, background, accent, fontFamily }`) — stored subset; AI generation also returns `accentForeground`, `fontKind`, `mood` (see `GeneratedTheme` in `src/lib/types.ts`)
 - `match_times`: JSON (Array of Timestamps — one or more scheduled match times)
 - `matched`: Boolean (Default: `false`)
 

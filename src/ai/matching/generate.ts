@@ -1,6 +1,6 @@
 import { Type } from "@google/genai";
 import { ai } from "../clients";
-import { Attendee, FormQuestion, MatchResult, AttendeeMatch } from "../types";
+import { MatchAttendee, FormQuestion, MatchResult, AttendeeMatch } from "@/lib/types";
 import { buildMatchPrompt, buildReasonPrompt } from "./prompts";
 
 const CONCURRENCY = 15;
@@ -21,8 +21,8 @@ async function runBatched<T, R>(
 
 // ---- Pass 1: directed per-person matching ----
 async function matchOne(
-  focal: Attendee,
-  all: Attendee[],
+  focal: MatchAttendee,
+  all: MatchAttendee[],
   questions: FormQuestion[],
   target: number
 ): Promise<MatchResult> {
@@ -66,8 +66,8 @@ async function matchOne(
 
 // ---- Reason backfill for reciprocal edges ----
 async function generateReason(
-  owner: Attendee,
-  target: Attendee,
+  owner: MatchAttendee,
+  target: MatchAttendee,
   questions: FormQuestion[]
 ): Promise<string> {
   const response = await ai.models.generateContent({
@@ -89,7 +89,7 @@ async function generateReason(
 // ---- Pass 2: make matches reciprocal (union) ----
 async function reconcileReciprocity(
   directed: MatchResult[],
-  attendees: Attendee[],
+  attendees: MatchAttendee[],
   questions: FormQuestion[]
 ): Promise<MatchResult[]> {
   const byId = new Map(attendees.map((a) => [a.id, a]));
@@ -155,7 +155,7 @@ async function reconcileReciprocity(
 // ---- Public entry point ----
 export async function generateMatches(
   questions: FormQuestion[],
-  attendees: Attendee[],
+  attendees: MatchAttendee[],
   targetMatches: number = 3,   // anchor, not a cap — AI decides actual count
   reciprocal: boolean = true
 ): Promise<MatchResult[]> {

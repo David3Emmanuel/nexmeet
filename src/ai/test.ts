@@ -1,5 +1,5 @@
 import { generateFormQuestions } from "./index";
-import { EventInfo } from "./types";
+import { EventInfo } from "@/lib/types";
 
 const testEvent: EventInfo = {
   title: "FinTech Founders & Funders Night",

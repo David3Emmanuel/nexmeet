@@ -1,4 +1,4 @@
-import { EventInfo } from "../types";
+import { EventInfo } from "@/lib/types";
 
 export function buildQuestionPrompt(event: EventInfo, count: number): string {
   return `You are designing the sign-up form for NexMeet, an AI networking app. The answers to these questions will later be fed to an AI that matches each attendee with the most valuable people for them to meet at this specific event.

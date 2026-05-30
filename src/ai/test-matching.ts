@@ -1,6 +1,6 @@
 import "dotenv/config";  // remove if on Next.js
 import { generateMatches } from "./index";
-import { Attendee, FormQuestion } from "./types";
+import { MatchAttendee, FormQuestion } from "@/lib/types";
 
 // Mirror the questions your form would have produced for a fintech event.
 const questions: FormQuestion[] = [
@@ -13,7 +13,7 @@ const questions: FormQuestion[] = [
 //  - Ada (needs seed funding) <-> Bisi (angel writing seed checks)  ← should match
 //  - Chidi (needs a technical cofounder) <-> Dele (CTO seeking a founder to join) ← should match
 //  - Bisi is a HUB: several founders should pick her, inflating her card.
-const attendees: Attendee[] = [
+const attendees: MatchAttendee[] = [
   { id: "a1", name: "Ada",   lookingFor: "Seed investors", answers: { q1: "Pre-seed fintech for informal savings groups", q2: "Raising a $300k seed round", q3: "Deep knowledge of African savings markets" } },
   { id: "a2", name: "Bisi",  lookingFor: "Promising pre-seed teams", answers: { q1: "Angel investing, ex-fintech operator", q2: "Deploying capital into 3-4 pre-seed startups", q3: "Seed checks up to $100k plus operator advice" } },
   { id: "a3", name: "Chidi", lookingFor: "A technical cofounder", answers: { q1: "Non-technical founder with a payments idea", q2: "A CTO-level cofounder", q3: "Market access and a sales background" } },

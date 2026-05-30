@@ -1,11 +1,11 @@
 import { Type } from '@google/genai'
 import { ai } from '../clients'
-import { Theme } from '../types'
+import { GeneratedTheme } from '@/lib/types'
 import { buildThemePrompt } from './prompt'
 import { ensureReadable, clampHex } from './color'
 
 // Sensible fallback if the flyer is unreadable or the call fails.
-const FALLBACK: Theme = {
+const FALLBACK: GeneratedTheme = {
   background: '#ffffff',
   foreground: '#111111',
   accent: '#4f46e5',
@@ -27,7 +27,7 @@ async function fetchFlyerAsBase64(
   return { data: buffer.toString('base64'), mimeType }
 }
 
-export async function generateTheme(flyerUrl: string): Promise<Theme> {
+export async function generateTheme(flyerUrl: string): Promise<GeneratedTheme> {
   try {
     const { data, mimeType } = await fetchFlyerAsBase64(flyerUrl)
 
@@ -66,7 +66,7 @@ export async function generateTheme(flyerUrl: string): Promise<Theme> {
       },
     })
 
-    const raw = JSON.parse(response.text ?? '{}') as Partial<Theme>
+    const raw = JSON.parse(response.text ?? '{}') as Partial<GeneratedTheme>
 
     // AI proposes; code guarantees. Normalize hex + enforce contrast.
     const background = clampHex(raw.background ?? FALLBACK.background)

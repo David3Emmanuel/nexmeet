@@ -1,6 +1,6 @@
 import { Type } from "@google/genai";
 import { ai } from "../clients";
-import { EventInfo, FormQuestion } from "../types";
+import { EventInfo, FormQuestion } from "@/lib/types";
 import { buildQuestionPrompt } from "./prompts";
 
 export async function generateFormQuestions(

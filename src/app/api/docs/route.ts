@@ -12,14 +12,25 @@ const spec = {
     schemas: {
       ThemeConfig: {
         type: 'object',
+        description: 'Stored event theme (4 fields). Subset of GeneratedTheme.',
         properties: {
           background: { type: 'string', example: '#ffffff' },
           foreground: { type: 'string', example: '#111111' },
           accent: { type: 'string', example: '#4f46e5' },
-          accentForeground: { type: 'string', example: '#ffffff' },
           fontFamily: { type: 'string', example: 'Inter, sans-serif' },
+        },
+      },
+      GeneratedTheme: {
+        type: 'object',
+        description: 'Full theme returned by AI generation. Extends ThemeConfig with accessibility and font metadata.',
+        properties: {
+          background: { type: 'string', example: '#ffffff' },
+          foreground: { type: 'string', example: '#111111' },
+          accent: { type: 'string', example: '#4f46e5' },
+          fontFamily: { type: 'string', example: 'Inter, sans-serif' },
+          accentForeground: { type: 'string', example: '#ffffff', description: 'Text/icon color that sits ON the accent color' },
           fontKind: { type: 'string', enum: ['sans', 'serif', 'display', 'mono'] },
-          mood: { type: 'string', example: 'sleek corporate' },
+          mood: { type: 'string', example: 'sleek corporate', description: 'One-line vibe description from the AI' },
         },
       },
       FormQuestion: {
@@ -77,7 +88,7 @@ const spec = {
         security: [{ sessionCookie: [] }],
         requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['image_url'], properties: { title: { type: 'string' }, about: { type: 'string' }, image_url: { type: 'string', format: 'uri' } } } } } },
         responses: {
-          200: { description: 'Generated theme', content: { 'application/json': { schema: { type: 'object', properties: { theme_config: { $ref: '#/components/schemas/ThemeConfig' } } } } } },
+          200: { description: 'Generated theme', content: { 'application/json': { schema: { type: 'object', properties: { theme_config: { $ref: '#/components/schemas/GeneratedTheme' } } } } } },
           400: { description: 'image_url missing', content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } } },
           401: { description: 'Unauthorized' },
         },
