@@ -188,22 +188,7 @@ function StepDetails({ details, set }: { details: Details; set: (k: string, v: s
           />
         </label>
 
-        {/* Matches configuration */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <label className="field">
-            <span className="field-label">Matches per Person <strong style={{ color: 'var(--accent)' }}>*</strong></span>
-            <span className="field-hint">Target matches each attendee gets.</span>
-            <input 
-              className="input" 
-              type="number"
-              min="1"
-              max="10"
-              placeholder="3" 
-              value={details.matchCount} 
-              onChange={e => set("matchCount", e.target.value)} 
-            />
-          </label>
-        </div>
+        {/* Matches configuration removed for AI automation */}
 
       </div>
 
@@ -220,7 +205,7 @@ function StepDetails({ details, set }: { details: Details; set: (k: string, v: s
         }}>
           {/* Header Image Dropzone */}
           <div style={{ position: 'relative', height: 160, background: 'var(--paper-2)' }}>
-            <ImageDrop placeholder="Upload cover flyer / logo" style={{ width: "100%", height: "100%", border: 'none', borderRadius: 0 }} />
+            <ImageDrop value={details.flyer} onChange={v => set("flyer", v || "")} placeholder="Upload cover flyer / logo" style={{ width: "100%", height: "100%", border: 'none', borderRadius: 0 }} />
           </div>
 
           {/* Details Preview */}
@@ -257,7 +242,7 @@ function StepDetails({ details, set }: { details: Details; set: (k: string, v: s
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <Icon name="users" size={14} />
-                <span>Target: {details.matchCount || '3'} matches per person</span>
+                <span>Smart AI-calculated connections</span>
               </div>
             </div>
 
@@ -282,7 +267,7 @@ function StepDetails({ details, set }: { details: Details; set: (k: string, v: s
 }
 
 function StepGenerating({ details }: { details: Details }) {
-  const msgs = ["Reading your event brief…", "Drafting sign-up questions…", "Choosing a theme that fits…", "Tuning the matching prompt…"];
+  const msgs = ["Reading your event brief…", "Analyzing flyer aesthetics…", "Curating smart questions…", "Setting up attendee logic…", "Optimizing matching algorithm…"];
   const [mi, setMi] = useState(0);
   useEffect(() => { const id = setInterval(() => setMi(m => Math.min(m + 1, msgs.length - 1)), 600); return () => clearInterval(id); }, []);
   return (
@@ -319,8 +304,8 @@ const removeQ = (id: string) => setQuestions(questions.filter(q => q.id !== id))
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1.15fr", gap: 24, alignItems: "start" }} className="review-grid">
         <div className="panel" style={{ padding: 22 }}>
           <div className="row between" style={{ marginBottom: 14 }}>
-            <h3 className="display" style={{ fontSize: 19 }}>Theme</h3>
-            <span style={{ fontSize: 12.5, color: "var(--ink-3)", fontWeight: 600 }}>Tap to switch</span>
+            <h3 className="display" style={{ fontSize: 19 }}>AI Design Studio</h3>
+            <span style={{ fontSize: 12.5, color: "var(--ink-3)", fontWeight: 600 }}>Extracted from flyer</span>
           </div>
           <div style={{ borderRadius: 18, overflow: "hidden", border: "1px solid var(--card-edge)", marginBottom: 16 }}>
             <div style={{ background: themeObj.accent, padding: 18, color: "#fff" }}>
@@ -329,15 +314,9 @@ const removeQ = (id: string) => setQuestions(questions.filter(q => q.id !== id))
               <div style={{ marginTop: 12, display: "inline-flex", padding: "7px 14px", borderRadius: 999, background: "rgba(255,255,255,.2)", fontSize: 13, fontWeight: 700 }}>Find my people →</div>
             </div>
           </div>
-          <div className="row wrap gap8">
-            {THEMES.map(t => (
-              <button key={t.id} type="button" onClick={() => onTheme(t.id)} className="row gap8" style={{ alignItems: "center", padding: "8px 12px", borderRadius: 999, border: "1.5px solid " + (themeId === t.id ? "var(--ink)" : "var(--card-edge)"), background: themeId === t.id ? "var(--card)" : "transparent" }}>
-                <span style={{ width: 16, height: 16, borderRadius: "50%", background: t.accent }} />
-                <span style={{ fontSize: 13, fontWeight: 700 }}>{t.name}</span>
-              </button>
-            ))}
-          </div>
-          <p className="lead" style={{ fontSize: 12.5, marginTop: 12 }}>AI picked <b style={{ color: "var(--ink)" }}>{themeObj.name}</b> — {themeObj.desc} — to fit a {details.type}.</p>
+          <p className="lead" style={{ fontSize: 13, marginTop: 12, lineHeight: 1.5 }}>
+            NexMeet AI extracted <b style={{ color: "var(--ink)" }}>{themeObj.name}</b> from your uploaded image. This custom theme will automatically be applied to all your attendee forms and dashboard views.
+          </p>
         </div>
 
         <div className="panel" style={{ padding: 22 }}>
@@ -373,7 +352,7 @@ const removeQ = (id: string) => setQuestions(questions.filter(q => q.id !== id))
 
 function StepTiming({ timing, setTiming, details }: { timing: Timing; setTiming: (t: Timing) => void; details: Details }) {
   const opts = [
-    { id: "before", title: "Match before the event", icon: "bolt", desc: "Everyone who signs up early gets their 3 matches ready the moment they walk in. Best when registration opens ahead of time." },
+    { id: "before", title: "Match before the event", icon: "bolt", desc: "Everyone who signs up early gets their matches ready the moment they walk in. Best when registration opens ahead of time." },
     { id: "during", title: "Match live, during the event", icon: "refresh", desc: "Matches generate as people arrive and keep improving as the room fills. Attendees can refresh anytime. Best for walk-in energy." },
   ];
   return (
@@ -439,7 +418,7 @@ export default function OrganizerCreate({ defaults, applyTheme, onHome, onExit, 
     type: defaults?.type || "hackathon",
     date: defaults?.date || "",
     venue: defaults?.venue || "",
-    matchCount: defaults?.matchCount || "3",
+    flyer: defaults?.flyer || null,
   });
   const [theme, setTheme] = useState("ember");
   const [questions, setQuestions] = useState<Question[]>(baseQuestions("hackathon"));
@@ -491,7 +470,13 @@ export default function OrganizerCreate({ defaults, applyTheme, onHome, onExit, 
           {step === 1 && <StepGenerating details={details} />}
           {step === 2 && <StepReview details={details} themeObj={themeObj} themeId={theme} onTheme={(id) => { setTheme(id); applyTheme(THEMES.find(x => x.id === id)); }} questions={questions} setQuestions={setQuestions} />}
           {step === 3 && <StepTiming timing={timing} setTiming={setTiming} details={details} />}
-          {step === 4 && <StepLive details={details} themeObj={themeObj} onLaunch={() => onLaunch(details)} />}
+          {step === 4 && <StepLive details={details} themeObj={themeObj} onLaunch={() => {
+            if (typeof window !== 'undefined') {
+              const slug = (details.title || "your-event").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 22);
+              localStorage.setItem(`nexmeet:event:${slug}`, JSON.stringify({ ...details, theme: themeObj }));
+            }
+            onLaunch(details);
+          }} />}
         </div>
       </div>
 
