@@ -22,9 +22,14 @@ export async function GET(req: NextRequest, { params }: Params) {
     const attendeeId = attendee.rows[0].id
     const eventId = attendee.rows[0].event_id
 
-    // Fetch matches involving this attendee
+    // Fetch the owner's own name for the email-link landing case
+    const ownerRow = await pool.query(`SELECT name FROM attendees WHERE id = $1`, [attendeeId])
+    const ownerName: string = ownerRow.rows[0]?.name ?? ''
+
+    // Fetch matches involving this attendee, including the stored AI/heuristic reason
     const { rows } = await pool.query(
       `SELECT m.id,
+              m.reason,
               CASE WHEN m.attendee_a_id = $1 THEN b.id ELSE a.id END AS matched_id,
               CASE WHEN m.attendee_a_id = $1 THEN b.name ELSE a.name END AS matched_name,
               CASE WHEN m.attendee_a_id = $1 THEN b.responses ELSE a.responses END AS matched_responses
@@ -35,7 +40,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       [attendeeId, eventId]
     )
 
-    return NextResponse.json({ matches: rows })
+    return NextResponse.json({ owner_name: ownerName, matches: rows })
   }
 
   // Organizer flow

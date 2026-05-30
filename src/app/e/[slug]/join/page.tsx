@@ -1,6 +1,7 @@
 'use client'
 
 import { use, useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import FormScreen from '@/components/attendee/FormScreen'
 import FindingScreen from '@/components/attendee/FindingScreen'
 import MatchesScreen from '@/components/attendee/MatchesScreen'
@@ -19,6 +20,7 @@ export default function JoinPage({
 }) {
   const { slug } = use(params)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [screen, setScreen] = useState<Screen>('form')
   const [you, setYou] = useState<any>({ name: '', email: '', responses: {} })
   const [matches, setMatches] = useState<any[]>([])
@@ -64,8 +66,14 @@ export default function JoinPage({
   }, [eventData])
 
   useEffect(() => {
-    const token = localStorage.getItem(`nexmeet:token:${slug}`)
+    // Prefer the ?ticket= param from the email link; fall back to localStorage
+    const urlTicket = searchParams.get('ticket')
+    const storedToken = localStorage.getItem(`nexmeet:token:${slug}`)
+    const token = urlTicket || storedToken
+
     if (token) {
+      // Persist so future visits (without the query param) still work
+      localStorage.setItem(`nexmeet:token:${slug}`, token)
       setAuthToken(token)
       checkMatchStatus(token)
     }
@@ -88,11 +96,15 @@ export default function JoinPage({
       const res = await fetch(`/api/events/${slug}/matches?auth_token=${token}`)
       const data = await res.json()
       if (data.matches) {
+        // If landing via email link we won't have `you` set — use owner name from response
+        if (data.owner_name) {
+          setYou((prev: any) => prev.name ? prev : { ...prev, name: data.owner_name })
+        }
         const mappedMatches = data.matches.map((m: any, i: number) => ({
           id: m.id,
           name: m.matched_name,
           color: ['var(--plum)', 'var(--forest)', 'var(--sky)', 'var(--tangerine)', 'var(--berry)'][i % 5],
-          reason: m.matched_responses?.looking_for || 'Great potential connection based on your profiles.',
+          reason: m.reason || m.matched_responses?.looking_for || 'Great potential connection based on your profiles.',
           score: 90 + (i % 10),
           lookingFor: m.matched_responses?.looking_for || '',
           answers: m.matched_responses || {}

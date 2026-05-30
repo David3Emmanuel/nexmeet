@@ -98,16 +98,20 @@ function heuristicMatches(attendees: MatchAttendee[]): MatchResult[] {
   const shuffled = shuffle(pairs)
   shuffled.sort((x, y) => y.score - x.score)
 
-  // Greedy matching — each person gets at most one match
+  // Greedy matching — each person gets at most one match in the first pass
   const matched = new Set<string>()
-  for (const { a, b, score, shared } of shuffled) {
+
+  const makeReason = (shared: string[]): string =>
+    shared.length > 0
+      ? `You both mentioned: ${shared.slice(0, 3).join(', ')}.`
+      : 'You have complementary profiles — sometimes the best connections are unexpected.'
+
+  for (const { a, b, shared } of shuffled) {
     if (matched.has(a.id) || matched.has(b.id)) continue
     matched.add(a.id)
     matched.add(b.id)
 
-    const reason =
-      'You have complementary profiles — sometimes the best connections are unexpected.'
-
+    const reason = makeReason(shared)
     resultById.get(a.id)!.matches.push({
       matchedAttendeeId: b.id,
       matchedName: b.name,
@@ -122,17 +126,47 @@ function heuristicMatches(attendees: MatchAttendee[]): MatchResult[] {
     })
   }
 
+  // Ensure nobody is left out — if odd attendance, pair the unmatched person
+  // with their highest-scored partner (who is already matched), making it a
+  // second connection for that partner.
+  for (const attendee of attendees) {
+    if (matched.has(attendee.id)) continue
+
+    // Best available pair by score (sorted list, so first entry is best)
+    const best = shuffled.find(
+      (p) => p.a.id === attendee.id || p.b.id === attendee.id,
+    )
+    if (!best) continue
+
+    const partner = best.a.id === attendee.id ? best.b : best.a
+    const reason = makeReason(best.shared)
+
+    resultById.get(attendee.id)!.matches.push({
+      matchedAttendeeId: partner.id,
+      matchedName: partner.name,
+      reason,
+      mutual: true,
+    })
+    resultById.get(partner.id)!.matches.push({
+      matchedAttendeeId: attendee.id,
+      matchedName: attendee.name,
+      reason,
+      mutual: true,
+    })
+    matched.add(attendee.id)
+  }
+
   return results
 }
 
 export async function triggerMatch(eventId: string): Promise<number> {
   const event = await pool.query(
-    `SELECT id, title, form_fields FROM events WHERE id = $1`,
+    `SELECT id, title, form_fields, slug FROM events WHERE id = $1`,
     [eventId],
   )
   if (event.rowCount === 0) throw new Error(`Event ${eventId} not found`)
 
-  const { title, form_fields } = event.rows[0]
+  const { title, form_fields, slug } = event.rows[0]
 
   const attendeeRows = await pool.query(
     `SELECT id, name, email, auth_token, responses FROM attendees WHERE event_id = $1`,
@@ -202,7 +236,7 @@ export async function triggerMatch(eventId: string): Promise<number> {
       const result = resultMap.get(row.id)
       if (!result || result.matches.length === 0) return
 
-      const ticketUrl = `${baseUrl}/e/${eventId}?ticket=${row.auth_token}`
+      const ticketUrl = `${baseUrl}/e/${slug || eventId}/join?ticket=${row.auth_token}`
       await sendEmail({
         to: row.email,
         subject: `Your matches at ${title} are ready!`,
