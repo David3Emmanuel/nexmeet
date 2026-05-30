@@ -10,7 +10,7 @@ The backend is a **Next.js app router** with API routes under `src/app/api/`, de
        │
        ├─► [ Database ] (Raw PostgreSQL connection)
        ├─► [ LLM API ] (Anthropic - theme generation, question generation, matchmaking)
-       └─► [ Email API ] (Magic links & match notifications)
+       └─► [ Email ] (Nodemailer + Gmail SMTP)
 ```
 
 ### Key Architectural Decisions
