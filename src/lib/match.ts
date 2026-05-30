@@ -1,7 +1,37 @@
 import { pool } from '@/lib/db'
 import { generateMatches } from '@/ai'
 import { sendEmail } from '@/lib/email'
-import type { MatchAttendee, FormQuestion } from '@/lib/types'
+import type { MatchAttendee, FormQuestion, MatchResult } from '@/lib/types'
+
+/** Fisher-Yates shuffle */
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
+/**
+ * Random fallback: pair attendees sequentially after shuffling.
+ * Every pair is mutual — if A is matched to B, B is matched to A.
+ * The last attendee is unmatched when the count is odd.
+ */
+function randomMatches(attendees: MatchAttendee[]): MatchResult[] {
+  const shuffled = shuffle(attendees)
+  const results: MatchResult[] = attendees.map((a) => ({ attendeeId: a.id, matches: [] }))
+  const resultById = new Map(results.map((r) => [r.attendeeId, r]))
+
+  for (let i = 0; i + 1 < shuffled.length; i += 2) {
+    const a = shuffled[i]
+    const b = shuffled[i + 1]
+    resultById.get(a.id)!.matches.push({ matchedAttendeeId: b.id, matchedName: b.name, reason: '' })
+    resultById.get(b.id)!.matches.push({ matchedAttendeeId: a.id, matchedName: a.name, reason: '' })
+  }
+
+  return results
+}
 
 export async function triggerMatch(eventId: string): Promise<number> {
   const event = await pool.query(
@@ -30,7 +60,13 @@ export async function triggerMatch(eventId: string): Promise<number> {
     answers: row.responses as Record<string, string>,
   }))
 
-  const results = await generateMatches(questions, attendees)
+  let results: MatchResult[]
+  try {
+    results = await generateMatches(questions, attendees)
+  } catch (err) {
+    console.error('[triggerMatch] AI matching failed, falling back to random pairings:', err)
+    results = randomMatches(attendees)
+  }
 
   // Clear old matches, persist new pairs
   await pool.query('DELETE FROM matches WHERE event_id = $1', [eventId])
@@ -79,7 +115,7 @@ export async function triggerMatch(eventId: string): Promise<number> {
         html: `
           <p>Hi <strong>${row.name}</strong>,</p>
           <p>Your matches at <strong>${title}</strong> are ready!</p>
-          <ul>${result.matches.map((m) => `<li><strong>${m.matchedName}</strong> — ${m.reason}</li>`).join('')}</ul>
+          <ul>${result.matches.map((m) => `<li><strong>${m.matchedName}</strong>${m.reason ? ` — ${m.reason}` : ''}</li>`).join('')}</ul>
           <p><a href="${ticketUrl}">View your match card</a></p>
         `,
       })
