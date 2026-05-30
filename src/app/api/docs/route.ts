@@ -96,10 +96,10 @@ const spec = {
       },
     },
 
-    // ── Events — AI ─────────────────────────────────────────────────────────
-    '/events/generate/theme': {
+    // ── AI ───────────────────────────────────────────────────────────────────
+    '/ai/theme': {
       post: {
-        tags: ['Events — AI'],
+        tags: ['AI'],
         summary: 'Generate theme from event flyer',
         security: [{ sessionCookie: [] }],
         requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['image_url'], properties: { title: { type: 'string' }, about: { type: 'string' }, image_url: { type: 'string', format: 'uri' } } } } } },
@@ -110,9 +110,9 @@ const spec = {
         },
       },
     },
-    '/events/generate/questions': {
+    '/ai/questions': {
       post: {
-        tags: ['Events — AI'],
+        tags: ['AI'],
         summary: 'Generate form questions for an event',
         security: [{ sessionCookie: [] }],
         requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['title', 'about'], properties: { title: { type: 'string' }, about: { type: 'string' }, count: { type: 'integer', minimum: 1, maximum: 5, default: 5 } } } } } },
@@ -241,6 +241,86 @@ const spec = {
           400: { description: 'No attendees to match' },
           401: { description: 'Unauthorized' },
           404: { description: 'Event not found or not owned' },
+        },
+      },
+    },
+
+    '/events/{id}/attendees': {
+      get: {
+        tags: ['Events'],
+        summary: 'List attendees for an event',
+        security: [{ sessionCookie: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        responses: {
+          200: {
+            description: 'Attendee list',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    attendees: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'string', format: 'uuid' },
+                          name: { type: 'string' },
+                          email: { type: 'string', format: 'email' },
+                          phone: { type: 'string' },
+                          responses: { type: 'object', additionalProperties: { type: 'string' } },
+                          lat: { type: 'number' },
+                          lng: { type: 'number' },
+                          updated_at: { type: 'string', format: 'date-time' },
+                        },
+                      },
+                    },
+                    total: { type: 'integer' },
+                  },
+                },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+          404: { description: 'Not found or not owned' },
+        },
+      },
+    },
+    '/events/{id}/matches': {
+      get: {
+        tags: ['Events'],
+        summary: 'List match pairs for an event',
+        security: [{ sessionCookie: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        responses: {
+          200: {
+            description: 'Match pairs',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    matches: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'string', format: 'uuid' },
+                          attendee_a_id: { type: 'string', format: 'uuid' },
+                          attendee_a_name: { type: 'string' },
+                          attendee_b_id: { type: 'string', format: 'uuid' },
+                          attendee_b_name: { type: 'string' },
+                        },
+                      },
+                    },
+                    total: { type: 'integer' },
+                  },
+                },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+          404: { description: 'Not found or not owned' },
         },
       },
     },
