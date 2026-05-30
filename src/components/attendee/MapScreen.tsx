@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Avatar from '@/components/ui/Avatar';
 import Icon from '@/components/ui/Icon';
-import { EVENT, Match, YouProfile } from '@/lib/data';
+import { AV } from '@/lib/data';
 
 const ZONES = [
   { label: "Main Stage", x: 8, y: 6, w: 84, h: 15 },
@@ -45,7 +45,7 @@ function LocationGate({ onGrant, onSkip }: LocationGateProps) {
         </div>
       </div>
       <h2 className="display" style={{ fontSize: 28 }}>Find them in the room</h2>
-      <p className="lead" style={{ fontSize: 15.5, marginTop: 12, maxWidth: 300 }}>Share your location and NexMeet shows you and your three matches on a live map of the venue — so you can actually walk up and say hi.</p>
+      <p className="lead" style={{ fontSize: 15.5, marginTop: 12, maxWidth: 300 }}>Share your location and NexMeet shows you and your matches on a live map of the venue — so you can actually walk up and say hi.</p>
       <div className="col gap10" style={{ width: "100%", marginTop: 28 }}>
         <button className="btn btn-primary btn-full" onClick={onGrant}><Icon name="location" size={18} /> Enable location</button>
         <button className="btn btn-ghost btn-full" onClick={onSkip}>Not now</button>
@@ -55,20 +55,28 @@ function LocationGate({ onGrant, onSkip }: LocationGateProps) {
   );
 }
 
+interface MatchItem {
+  id: string;
+  name: string;
+  color?: string;
+  reason?: string;
+  answers?: Record<string, string>;
+}
+
 interface MapScreenProps {
-  you: YouProfile;
-  matches: Match[];
+  you: { name: string };
+  matches: MatchItem[];
   granted: boolean;
   onGrant: () => void;
   onSkip: () => void;
-  onOpenMatch: (m: Match) => void;
+  onOpenMatch: (m: MatchItem) => void;
 }
 
 export default function MapScreen({ you, matches, granted, onGrant, onSkip, onOpenMatch }: MapScreenProps) {
   const [sel, setSel] = useState<number | null>(null);
   if (!granted) return <LocationGate onGrant={onGrant} onSkip={onSkip} />;
 
-  const mm = matches.map((m, i) => ({ ...m, pos: MATCH_POS[i], d: dist(YOU_POS, MATCH_POS[i]) }));
+  const mm = matches.map((m, i) => ({ ...m, pos: MATCH_POS[i % MATCH_POS.length], d: dist(YOU_POS, MATCH_POS[i % MATCH_POS.length]), accent: m.color || AV[i % AV.length] }));
   const selected = sel != null ? mm[sel] : null;
 
   return (
@@ -83,7 +91,7 @@ export default function MapScreen({ you, matches, granted, onGrant, onSkip, onOp
         zIndex: 100,
         flexShrink: 0,
       }}>
-        <div className="eyebrow">Live map · {EVENT.name}</div>
+        <div className="eyebrow">Live map · Your matches</div>
         <h1 className="display" style={{ fontSize: 26, marginTop: 8 }}>You &amp; your people</h1>
       </div>
 

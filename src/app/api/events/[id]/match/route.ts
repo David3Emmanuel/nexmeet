@@ -14,13 +14,13 @@ export async function POST(_req: NextRequest, { params }: Params) {
   const owned = await pool.query(
     `SELECT e.id FROM events e
      JOIN organizers o ON o.id = e.organizer_id
-     WHERE e.id = $1 AND o.email = $2`,
+     WHERE (e.slug = $1 OR e.id::text = $1) AND o.email = $2`,
     [id, session.email],
   )
   if (owned.rowCount === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   try {
-    const matched = await triggerMatch(id)
+    const matched = await triggerMatch(owned.rows[0].id)
     return NextResponse.json({ matched })
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Matching failed'

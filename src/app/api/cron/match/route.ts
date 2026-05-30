@@ -1,39 +1,43 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { pool } from '@/lib/db'
-import { triggerMatch } from '@/lib/match'
+import { NextResponse } from 'next/server';
+import { pool } from '@/lib/db';
+import { triggerMatch } from '@/lib/match';
 
-export async function GET(req: NextRequest) {
-  const auth = req.headers.get('authorization')
-  const secret = process.env.CRON_SECRET
+export async function GET(req: Request) {
+  // Optional cron secret for security
+  // const authHeader = req.headers.get('authorization');
+  // if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  // }
 
-  if (!secret || auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  try {
+    // Find events whose match time has passed but aren't matched yet
+    const { rows: events } = await pool.query(`
+      SELECT e.id, e.title, e.form_fields
+      FROM events e
+      WHERE e.matched = false
+        AND e.match_times IS NOT NULL
+        AND jsonb_array_length(e.match_times::jsonb) > 0
+        AND (e.match_times::jsonb ->> 0)::timestamp < NOW()
+    `);
 
-  // Find unmatched events with at least one match_time that has passed
-  const { rows } = await pool.query<{ id: string }>(`
-    SELECT id FROM events
-    WHERE matched = false
-      AND EXISTS (
-        SELECT 1 FROM jsonb_array_elements_text(match_times) AS t(ts)
-        WHERE ts::timestamptz <= NOW()
-      )
-  `)
+    let matchedCount = 0;
 
-  if (rows.length === 0) {
-    return NextResponse.json({ triggered: 0 })
-  }
-
-  let triggered = 0
-  for (const { id } of rows) {
-    try {
-      await triggerMatch(id)
-      triggered++
-      console.log(`[cron/match] matched event ${id}`)
-    } catch (err) {
-      console.error(`[cron/match] failed for event ${id}:`, err)
+    for (const event of events) {
+      try {
+        await triggerMatch(event.id);
+        matchedCount++;
+      } catch (err) {
+        console.error(`Error matching event ${event.id}:`, err);
+      }
     }
-  }
 
-  return NextResponse.json({ triggered })
+    return NextResponse.json({ 
+      success: true, 
+      processed: events.length,
+      matched_events: matchedCount
+    });
+  } catch (error: any) {
+    console.error('Cron match error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }

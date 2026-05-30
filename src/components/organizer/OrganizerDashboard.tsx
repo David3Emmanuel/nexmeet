@@ -7,7 +7,7 @@ import Avatar from '@/components/ui/Avatar';
 import Icon from '@/components/ui/Icon';
 import Logo from '@/components/ui/Logo';
 import QrCode from '@/components/ui/QrCode';
-import { AV, EVENT, GOALS, SEED } from '@/lib/data';
+import { AV } from '@/lib/data';
 
 interface OrganizerDashboardProps {
   eventId: string;
@@ -103,9 +103,9 @@ function ConnectionGraph({ attendees = [], matches = [] }: { attendees: any[]; m
 export default function OrganizerDashboard({ eventId, onExit, onNewEvent, onHome }: OrganizerDashboardProps) {
   const [eventData, setEventData] = useState<any>(null);
   const [attendees, setAttendees] = useState<any[]>([]);
+  const [matchPairs, setMatchPairs] = useState<any[]>([]);
   const [count, setCount] = useState(0);
   const [pulse, setPulse] = useState<string | null>(null);
-  const [feed, setFeed] = useState<{ name: string; role: string; t: number }[]>([]);
   const [isMatching, setIsMatching] = useState(false);
   const [matchesMade, setMatchesMade] = useState(0);
 
@@ -139,8 +139,9 @@ export default function OrganizerDashboard({ eventId, onExit, onNewEvent, onHome
     fetch(`/api/events/${eventId}/matches`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
-        if (data && data.total !== undefined) {
-           setMatchesMade(data.total);
+        if (data && data.matches) {
+          setMatchPairs(data.matches);
+          setMatchesMade(data.total ?? data.matches.length);
         }
       })
       .catch(console.error);
@@ -178,10 +179,9 @@ export default function OrganizerDashboard({ eventId, onExit, onNewEvent, onHome
   // Compute stats from real data
   const respondents = attendees.filter(a => a.responses && Object.keys(a.responses).length > 0).length;
   const completion = count > 0 ? Math.round((respondents / count) * 100) : 100;
-  
-  // Real attendee feed
+
+  // Real attendee feed sorted by most recent
   const sortedAttendees = [...attendees].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
-  const displayFeed = sortedAttendees.length > 0 ? sortedAttendees : [];
 
   return (
     <div className="org screen-enter">
@@ -248,7 +248,7 @@ export default function OrganizerDashboard({ eventId, onExit, onNewEvent, onHome
               <span style={{ fontSize: 13, color: "var(--ink-3)", fontWeight: 600 }}>{matchesMade} links</span>
             </div>
             <p className="lead" style={{ fontSize: 13.5, marginBottom: 8 }}>Every line is a match NexMeet suggested between two attendees.</p>
-            <ConnectionGraph nodes={Math.min(count, 16)} />
+            <ConnectionGraph attendees={attendees} matches={matchPairs} />
           </div>
 
           <div className="col gap20">
@@ -266,16 +266,16 @@ export default function OrganizerDashboard({ eventId, onExit, onNewEvent, onHome
             <div className="panel" style={{ padding: 22 }}>
               <h3 className="display" style={{ fontSize: 18, marginBottom: 14 }}>Just joined</h3>
               <div className="col gap8">
-                {displayFeed.slice(0, 5).map((a, i) => (
+                {sortedAttendees.slice(0, 5).map((a, i) => (
                   <div key={a.id} className="row gap12" style={{ alignItems: "center", padding: "6px 0", borderBottom: i < 4 ? "1px solid var(--line)" : "none" }}>
                     <Avatar name={a.name} color={AV[i % AV.length]} size={36} />
                     <div className="grow" style={{ minWidth: 0 }}>
                       <div style={{ fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.name}</div>
-                      <div style={{ fontSize: 12.5, color: "var(--ink-3)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.responses?.role || 'Attendee'}</div>
+                      <div style={{ fontSize: 12.5, color: "var(--ink-3)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.responses?.role || a.email || 'Attendee'}</div>
                     </div>
                   </div>
                 ))}
-                {displayFeed.length === 0 && (
+                {sortedAttendees.length === 0 && (
                   <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--ink-3)' }}>Waiting for attendees...</div>
                 )}
               </div>
