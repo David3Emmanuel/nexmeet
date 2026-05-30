@@ -1,23 +1,33 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import AuthGuard from '@/components/auth/AuthGuard';
+import OrganizerShell from '@/components/organizer/OrganizerShell';
 import OrganizerCreate from '@/components/organizer/OrganizerCreate';
 
-export default function OrganizerCreatePage() {
-  const applyTheme = (th?: { accent: string; font: string }) => {
-    if (!th) return;
-    document.documentElement.style.setProperty("--accent", th.accent);
-  };
+export default function CreateEventPage() {
+  const router = useRouter();
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "var(--paper)", overflow: "hidden" }}>
-      <OrganizerCreate
-        defaults={{ title: "", about: "", type: "hackathon" }}
-        applyTheme={applyTheme}
-        onHome={() => { window.location.href = "/organizer"; }}
-        onExit={() => { window.location.href = "/"; }}
-        onLaunch={() => { window.location.href = "/admin"; }}
-      />
-    </div>
+    <AuthGuard>
+      <OrganizerShell>
+        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <OrganizerCreate
+            defaults={{ title: '', about: '', type: 'hackathon' }}
+            applyTheme={() => {}}
+            onHome={() => router.push('/organizer')}
+            onExit={() => router.push('/organizer')}
+            onLaunch={(d) => {
+              const slug = (d.title || 'my-event')
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-|-$/g, '')
+                .slice(0, 22);
+              router.push(`/organizer/dashboard/${slug}`);
+            }}
+          />
+        </div>
+      </OrganizerShell>
+    </AuthGuard>
   );
 }

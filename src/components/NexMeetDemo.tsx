@@ -36,7 +36,7 @@ export default function NexMeetDemo() {
   const [tweaksOpen, setTweaksOpen] = useState(false);
   const [role, setRole] = useState<"attendee" | "organizer">("attendee");
   const [orgScreen, setOrgScreen] = useState<OrgScreen>("home");
-  const [createdEvent, setCreatedEvent] = useState({ name: EVENT.name, type: "hackathon" });
+  const [createdEvent, setCreatedEvent] = useState<{ name: string; type: string }>({ name: EVENT.name, type: "hackathon" });
   const [screen, setScreen] = useState<AttendeeScreen>("cover");
   const [you, setYou] = useState<YouProfile>(DEMO_YOU);
   const [matches, setMatches] = useState<Match[]>([]);

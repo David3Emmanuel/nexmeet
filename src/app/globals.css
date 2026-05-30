@@ -54,13 +54,39 @@ body {
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  overflow: hidden;
+  /* overflow NOT hidden — landing page and attendee pages scroll */
 }
 button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
 input, textarea, select { font-family: inherit; }
 ::selection { background: var(--accent); color: #fff; }
 
-/* ============ APP STAGE ============ */
+/* ============ ATTENDEE RESPONSIVE CONTAINER ============ */
+/* Used by /e/[slug]/join — no phone shell, just a centered column */
+.attendee-wrap {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--paper);
+}
+.attendee-col {
+  width: 100%;
+  max-width: 480px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+@media (min-width: 521px) {
+  .attendee-wrap {
+    background:
+      radial-gradient(120% 80% at 15% 0%, color-mix(in srgb, var(--accent) 8%, transparent) 0%, transparent 45%),
+      radial-gradient(120% 90% at 100% 100%, color-mix(in srgb, var(--plum) 10%, transparent) 0%, transparent 50%),
+      var(--paper);
+  }
+}
+
+/* ============ APP STAGE (demo / phone shell only) ============ */
 .stage {
   position: fixed; inset: 0;
   display: flex; align-items: center; justify-content: center;
@@ -218,8 +244,341 @@ input, textarea, select { font-family: inherit; }
 @media (max-width: 880px) {
   .org-grid { grid-template-columns: 1fr !important; }
   .review-grid { grid-template-columns: 1fr !important; }
+  .analytics-grid { grid-template-columns: 1fr !important; }
   .org-inner { padding: 22px 18px 50px !important; }
 }
 @media (max-width: 760px) {
   .step-details-grid { grid-template-columns: 1fr !important; }
+}
+
+/* ============ RESPONSIVE ORGANIZER LAYOUT ============ */
+.org-container {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  background: var(--paper);
+}
+
+.org-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  padding: 24px 0;
+  z-index: 20;
+}
+
+.org-mobile-header {
+  display: none;
+  height: 60px;
+  border-bottom: 1px solid var(--line);
+  background: var(--card);
+  padding: 0 16px;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 20;
+  flex-shrink: 0;
+}
+
+.org-mobile-bottom-nav {
+  display: none;
+  height: 64px;
+  border-top: 1px solid var(--line);
+  background: var(--card);
+  align-items: center;
+  justify-content: space-around;
+  z-index: 20;
+  flex-shrink: 0;
+}
+
+.org-content-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 36px;
+}
+
+.org-header-container {
+  padding: 28px 36px 24px;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+  flex-shrink: 0;
+}
+
+.org-header-container-tabbed {
+  padding: 28px 36px 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .org-container {
+    flex-direction: column;
+  }
+  .org-sidebar {
+    display: none;
+  }
+  .org-mobile-header {
+    display: flex;
+  }
+  .org-mobile-bottom-nav {
+    display: flex;
+  }
+  .org-content-container {
+    padding: 16px 16px 40px;
+  }
+  .org-header-container {
+    padding: 20px 16px 16px;
+  }
+  .org-header-container-tabbed {
+    padding: 20px 16px 0;
+  }
+}
+
+/* ============ LANDING PAGE STEP CARDS ============ */
+.landing-step-card {
+  position: relative;
+  background: var(--card);
+  border: 1.5px solid var(--card-edge);
+  border-top: 4px solid var(--step-accent);
+  border-radius: 24px;
+  padding: 36px 28px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.landing-step-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--step-accent);
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--step-accent) 15%, transparent);
+}
+
+/* ============ DASHBOARD STATS GRID ============ */
+.dashboard-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.stat-value {
+  font-size: 32px;
+  margin-top: 10px;
+  line-height: 1.1;
+}
+
+.stat-value-big {
+  font-size: 38px;
+}
+
+.stat-label {
+  font-size: 13.5px;
+  margin-top: 4px;
+  line-height: 1.3;
+}
+
+@media (max-width: 640px) {
+  .dashboard-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .stat-card {
+    padding: 14px 16px;
+    border-radius: 16px;
+  }
+  .stat-value {
+    font-size: 24px;
+    margin-top: 6px;
+  }
+  .stat-value-big {
+    font-size: 24px;
+  }
+  .stat-label {
+    font-size: 12px;
+    margin-top: 2px;
+  }
+}
+
+/* ============ LANDING PAGE DEMO PHONE LAYOUT ============ */
+.demo-section {
+  padding: 48px clamp(20px, 5vw, 80px);
+  background: var(--paper-2);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.demo-phone-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 331px;
+  height: 670px;
+  overflow: hidden;
+  position: relative;
+}
+
+.demo-phone-scaler {
+  transform: scale(0.8);
+  transform-origin: top center;
+  width: 414px;
+  height: 830px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .demo-section {
+    padding: 48px 20px;
+  }
+  .demo-phone-container {
+    width: 290px;
+    height: 590px;
+    margin-top: 24px;
+  }
+  .demo-phone-scaler {
+    transform: scale(0.7);
+  }
+}
+
+@media (max-width: 380px) {
+  .demo-phone-container {
+    width: 248px;
+    height: 500px;
+  }
+  .demo-phone-scaler {
+    transform: scale(0.6);
+  }
+}/* ============ RESPONSIVE UTILITIES & SETTINGS ============ */
+.desktop-only {
+  display: inline-flex !important;
+}
+.mobile-only {
+  display: none !important;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 1024px) {
+  .settings-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+  .mobile-only {
+    display: inline-flex !important;
+  }
+  .btn-save-text {
+    display: none !important;
+  }
+  .btn-save {
+    padding: 0 !important;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    border-radius: 50% !important;
+    justify-content: center !important;
+  }
+}
+
+/* ============ LANDING PAGE HERO EMAIL FORM (NETFLIX STYLE) ============ */
+.hero-email-form {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 580px;
+  margin: 0 auto;
+}
+
+.hero-email-input {
+  flex: 1;
+  min-height: 56px;
+  padding: 16px 20px;
+  font-size: 16px;
+  border-radius: 4px !important;
+  background: var(--card) !important;
+  border: 1.5px solid var(--card-edge) !important;
+  color: var(--ink);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.hero-email-input::placeholder {
+  color: var(--ink-3);
+}
+
+.hero-email-input:focus {
+  outline: none;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 14%, transparent) !important;
+}
+
+.hero-get-started-btn {
+  min-height: 56px;
+  padding: 0 30px;
+  font-size: 17px;
+  font-weight: 700;
+  border-radius: 4px !important;
+  background: var(--accent) !important;
+  color: #fff !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  transition: background 0.2s, transform 0.1s;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 25%, transparent) !important;
+}
+
+.hero-get-started-btn:active {
+  transform: scale(0.98);
+}
+
+.hero-get-started-btn:hover {
+  background: color-mix(in srgb, var(--accent) 88%, #000) !important;
+}
+
+@media (max-width: 600px) {
+  .hero-email-form {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 0 8px;
+  }
+  .hero-email-input {
+    width: 100%;
+  }
+  .hero-get-started-btn {
+    width: 100%;
+  }
+}
+
+/* ============ NAV SIGNIN BUTTON ============ */
+.nav-signin-btn {
+  background: var(--accent) !important;
+  color: #fff !important;
+  border: 1.5px solid var(--accent) !important;
+  border-radius: 4px !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 20%, transparent) !important;
+}
+
+.nav-signin-btn:hover {
+  background: transparent !important;
+  color: var(--accent) !important;
+  border-color: var(--accent) !important;
+  box-shadow: none !important;
 }

@@ -47,12 +47,20 @@ function baseQuestions(type: string) {
   ];
 }
 
-interface Details { title: string; about: string; type: string; }
+interface Details { 
+  title: string; 
+  about: string; 
+  type: string; 
+  date: string;
+  venue: string;
+  matchCount: string;
+}
+
 interface Timing { mode: string; when: string; }
 interface Question { id: string; q: string; locked?: boolean; on: boolean; custom?: boolean; }
 
 interface OrganizerCreateProps {
-  defaults?: Details;
+  defaults?: Partial<Details>;
   applyTheme: (th: { accent: string; font: string } | undefined) => void;
   onHome?: () => void;
   onExit: () => void;
@@ -63,41 +71,213 @@ const WIZARD_STEPS = ["Details", "Generate", "Review", "Timing", "Live"];
 
 /* ---- Steps ---- */
 function StepDetails({ details, set }: { details: Details; set: (k: string, v: string) => void }) {
-  return (
-    <div className="screen-enter step-details-grid" style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 30, alignItems: "start" }}>
-      <div>
-        <div className="eyebrow">Step 1 · Tell us about it</div>
-        <h1 className="display" style={{ fontSize: 34, marginTop: 12, marginBottom: 6 }}>What are you hosting?</h1>
-        <p className="lead" style={{ fontSize: 15, marginBottom: 26 }}>Give us the basics. NexMeet's AI will draft your sign-up form and pick a matching theme — you can tweak everything next.</p>
+  const isStandardType = EVENT_TYPES.some(t => t.id === details.type);
+  const [customType, setCustomType] = useState(isStandardType ? "" : details.type);
 
-        <label className="field" style={{ marginBottom: 20 }}>
-          <span className="field-label">Event title</span>
-          <input className="input" placeholder="e.g. BuildWithAI Lagos 2026" value={details.title} onChange={e => set("title", e.target.value)} />
+  return (
+    <div className="screen-enter step-details-grid" style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 40, alignItems: "start" }}>
+      
+      {/* Left side: Form */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div>
+          <div className="eyebrow">Step 1 · Event Details</div>
+          <h1 className="display" style={{ fontSize: 34, marginTop: 10, marginBottom: 8 }}>What are you hosting?</h1>
+          <p className="lead" style={{ fontSize: 14.5 }}>
+            Fill in the information below. NexMeet's AI will draft a custom sign-up form and choose a matching event theme.
+          </p>
+        </div>
+
+        {/* Event Title */}
+        <label className="field">
+          <span className="field-label">Event Title <strong style={{ color: 'var(--accent)' }}>*</strong></span>
+          <input 
+            className="input" 
+            placeholder="e.g. BuildWithAI Lagos 2026" 
+            value={details.title} 
+            onChange={e => set("title", e.target.value)} 
+          />
         </label>
 
-        <div className="field" style={{ marginBottom: 20 }}>
-          <span className="field-label">Event type</span>
+        {/* Event Type */}
+        <div className="field">
+          <span className="field-label">Event Type</span>
           <div className="row wrap gap8" style={{ marginTop: 8 }}>
             {EVENT_TYPES.map(t => (
-              <button key={t.id} className={"chip" + (details.type === t.id ? " on accent" : "")} onClick={() => set("type", t.id)}>
+              <button 
+                key={t.id} 
+                type="button"
+                className={"chip" + (details.type === t.id ? " on accent" : "")} 
+                onClick={() => set("type", t.id)}
+              >
                 {details.type === t.id && <Icon name="check" size={14} />}{t.label}
               </button>
             ))}
+            <button 
+              type="button"
+              className={"chip" + (!isStandardType ? " on accent" : "")} 
+              onClick={() => set("type", customType || "Custom Event")}
+            >
+              {!isStandardType && <Icon name="check" size={14} />}Other
+            </button>
           </div>
+
+          {!isStandardType && (
+            <div className="screen-enter" style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 12 }}>
+              <span className="field-hint" style={{ fontWeight: 600, color: 'var(--ink-2)' }}>Name your custom event type</span>
+              <div style={{ position: 'relative', maxWidth: 320 }}>
+                <input 
+                  className="input" 
+                  placeholder="e.g. Workshop, Board game night" 
+                  value={customType} 
+                  maxLength={25}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setCustomType(val);
+                    set("type", val || "Custom Event");
+                  }}
+                  style={{ paddingRight: 50 }}
+                />
+                <span style={{
+                  position: 'absolute',
+                  right: 12,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  fontSize: 11,
+                  color: 'var(--ink-3)',
+                  fontWeight: 700
+                }}>
+                  {customType.length}/25
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
+        {/* Date & Location Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <label className="field">
+            <span className="field-label">Date & Time <strong style={{ color: 'var(--accent)' }}>*</strong></span>
+            <input 
+              className="input" 
+              type="datetime-local"
+              value={details.date} 
+              onChange={e => set("date", e.target.value)} 
+            />
+          </label>
+
+          <label className="field">
+            <span className="field-label">Location / Venue <strong style={{ color: 'var(--accent)' }}>*</strong></span>
+            <input 
+              className="input" 
+              placeholder="e.g. Zone Tech Park, Gbagada" 
+              value={details.venue} 
+              onChange={e => set("venue", e.target.value)} 
+            />
+          </label>
+        </div>
+
+        {/* About details */}
         <label className="field">
-          <span className="field-label">About this event</span>
-          <span className="field-hint">A sentence or two on who's coming and why. The AI reads this to shape your form.</span>
-          <textarea className="textarea" rows={4} placeholder="A one-night AI hackathon bringing together student builders, founders, and mentors from across Lagos…" value={details.about} onChange={e => set("about", e.target.value)} />
+          <span className="field-label">About this event <strong style={{ color: 'var(--accent)' }}>*</strong></span>
+          <span className="field-hint">Describe who is coming and why. The AI reads this to shape your matching form.</span>
+          <textarea 
+            className="textarea" 
+            rows={4} 
+            placeholder="A one-night AI hackathon bringing together student builders, founders, and mentors from across Lagos…" 
+            value={details.about} 
+            onChange={e => set("about", e.target.value)} 
+          />
         </label>
+
+        {/* Matches configuration */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <label className="field">
+            <span className="field-label">Matches per Person <strong style={{ color: 'var(--accent)' }}>*</strong></span>
+            <span className="field-hint">Target matches each attendee gets.</span>
+            <input 
+              className="input" 
+              type="number"
+              min="1"
+              max="10"
+              placeholder="3" 
+              value={details.matchCount} 
+              onChange={e => set("matchCount", e.target.value)} 
+            />
+          </label>
+        </div>
+
       </div>
 
-      <div>
-        <span className="field-label">Reference image</span>
-        <span className="field-hint">Drop a flyer, logo, or icon — optional.</span>
-        <ImageDrop placeholder="Drop flyer / logo" style={{ width: "100%", height: 300 }} />
+      {/* Right side: Live Preview Card */}
+      <div style={{ position: 'sticky', top: 20 }}>
+        <span className="field-label" style={{ marginBottom: 8, display: 'block' }}>Event Card Preview</span>
+        
+        <div style={{
+          background: 'var(--card)',
+          border: '1px solid var(--card-edge)',
+          borderRadius: 24,
+          overflow: 'hidden',
+          boxShadow: 'var(--shadow-md)',
+        }}>
+          {/* Header Image Dropzone */}
+          <div style={{ position: 'relative', height: 160, background: 'var(--paper-2)' }}>
+            <ImageDrop placeholder="Upload cover flyer / logo" style={{ width: "100%", height: "100%", border: 'none', borderRadius: 0 }} />
+          </div>
+
+          {/* Details Preview */}
+          <div style={{ padding: 24 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <span style={{ 
+                fontSize: 10.5, 
+                fontWeight: 800, 
+                letterSpacing: '.08em', 
+                textTransform: 'uppercase', 
+                color: 'var(--accent)',
+                background: 'color-mix(in srgb, var(--accent) 10%, transparent)',
+                padding: '4px 8px',
+                borderRadius: 4
+              }}>
+                {details.type || 'HACKATHON'}
+              </span>
+            </div>
+
+            <h3 className="display" style={{ fontSize: 22, lineHeight: 1.2, marginBottom: 12, minHeight: 26 }}>
+              {details.title || 'Untitled Event'}
+            </h3>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, color: 'var(--ink-2)', fontSize: 13, marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Icon name="bolt" size={14} />
+                <span>
+                  {details.date ? new Date(details.date).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Date & Time not set'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Icon name="location" size={14} />
+                <span>{details.venue || 'Location not set'}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Icon name="users" size={14} />
+                <span>Target: {details.matchCount || '3'} matches per person</span>
+              </div>
+            </div>
+
+            <p style={{ 
+              fontSize: 13, 
+              color: 'var(--ink-3)', 
+              lineHeight: 1.4, 
+              display: '-webkit-box', 
+              WebkitLineClamp: 2, 
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              minHeight: 36
+            }}>
+              {details.about || 'Provide a short description on the left to see it here.'}
+            </p>
+          </div>
+        </div>
       </div>
+      
     </div>
   );
 }
@@ -153,7 +333,7 @@ function StepReview({ details, themeObj, themeId, onTheme, questions, setQuestio
           </div>
           <div className="row wrap gap8">
             {THEMES.map(t => (
-              <button key={t.id} onClick={() => onTheme(t.id)} className="row gap8" style={{ alignItems: "center", padding: "8px 12px", borderRadius: 999, border: "1.5px solid " + (themeId === t.id ? "var(--ink)" : "var(--card-edge)"), background: themeId === t.id ? "var(--card)" : "transparent" }}>
+              <button key={t.id} type="button" onClick={() => onTheme(t.id)} className="row gap8" style={{ alignItems: "center", padding: "8px 12px", borderRadius: 999, border: "1.5px solid " + (themeId === t.id ? "var(--ink)" : "var(--card-edge)"), background: themeId === t.id ? "var(--card)" : "transparent" }}>
                 <span style={{ width: 16, height: 16, borderRadius: "50%", background: t.accent }} />
                 <span style={{ fontSize: 13, fontWeight: 700 }}>{t.name}</span>
               </button>
@@ -173,7 +353,7 @@ function StepReview({ details, themeObj, themeId, onTheme, questions, setQuestio
               <div key={q.id} className="row gap10" style={{ alignItems: "center", padding: "11px 12px", borderRadius: 14, border: "1px solid var(--card-edge)", background: q.on ? "var(--card)" : "transparent", opacity: q.on ? 1 : .55 }}>
                 {q.locked
                   ? <span title="Required" style={{ color: "var(--ink-3)" }}><Icon name="pin" size={16} /></span>
-                  : <button onClick={() => toggle(q.id)} style={{ width: 20, height: 20, borderRadius: 6, border: "2px solid " + (q.on ? "var(--accent)" : "var(--card-edge)"), background: q.on ? "var(--accent)" : "transparent", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flex: "0 0 auto" }}>
+                  : <button type="button" onClick={() => toggle(q.id)} style={{ width: 20, height: 20, borderRadius: 6, border: "2px solid " + (q.on ? "var(--accent)" : "var(--card-edge)"), background: q.on ? "var(--accent)" : "transparent", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flex: "0 0 auto" }}>
                       {q.on && <Icon name="check" size={12} stroke={3} />}
                     </button>}
                 {editing === q.id && !q.locked
@@ -182,12 +362,12 @@ function StepReview({ details, themeObj, themeId, onTheme, questions, setQuestio
                 {q.locked
                   ? <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: ".08em", color: "var(--ink-3)", textTransform: "uppercase" }}>Required</span>
                   : (q.custom
-                    ? <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={() => removeQ(q.id)}><Icon name="close" size={14} /></button>
-                    : <button onClick={() => setEditing(q.id)} style={{ color: "var(--ink-3)" }}><Icon name="sliders" size={15} /></button>)}
+                    ? <button type="button" className="icon-btn" style={{ width: 28, height: 28 }} onClick={() => removeQ(q.id)}><Icon name="close" size={14} /></button>
+                    : <button type="button" onClick={() => setEditing(q.id)} style={{ color: "var(--ink-3)" }}><Icon name="sliders" size={15} /></button>)}
               </div>
             ))}
           </div>
-          <button className="btn btn-ghost btn-sm btn-full" onClick={addQ} style={{ marginTop: 12 }}>+ Add your own question</button>
+          <button type="button" className="btn btn-ghost btn-sm btn-full" onClick={addQ} style={{ marginTop: 12 }}>+ Add your own question</button>
         </div>
       </div>
     </div>
@@ -208,7 +388,7 @@ function StepTiming({ timing, setTiming, details }: { timing: Timing; setTiming:
         {opts.map(o => {
           const on = timing.mode === o.id;
           return (
-            <button key={o.id} onClick={() => setTiming({ ...timing, mode: o.id })} className="row gap16" style={{ textAlign: "left", alignItems: "flex-start", padding: 22, borderRadius: 20, border: "1.5px solid " + (on ? "var(--accent)" : "var(--card-edge)"), background: on ? "color-mix(in srgb, var(--accent) 7%, var(--card))" : "var(--card)", transition: "all .16s" }}>
+            <button key={o.id} type="button" onClick={() => setTiming({ ...timing, mode: o.id })} className="row gap16" style={{ textAlign: "left", alignItems: "flex-start", padding: 22, borderRadius: 20, border: "1.5px solid " + (on ? "var(--accent)" : "var(--card-edge)"), background: on ? "color-mix(in srgb, var(--accent) 7%, var(--card))" : "var(--card)", transition: "all .16s" }}>
               <span style={{ width: 46, height: 46, borderRadius: 14, flex: "0 0 auto", background: on ? "var(--accent)" : "var(--paper-2)", color: on ? "#fff" : "var(--ink-2)", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name={o.icon} size={22} /></span>
               <div className="grow">
                 <div className="row between" style={{ alignItems: "center" }}>
@@ -243,12 +423,12 @@ function StepLive({ details, themeObj, onLaunch }: { details: Details; themeObj:
         <div style={{ display: "inline-block", padding: 16, background: "var(--paper-2)", borderRadius: 22 }}>
           <QrCode seed={slug} size={170} />
         </div>
-        <div className="display" style={{ fontSize: 19, marginTop: 16 }}>nexmeet.app/{slug}</div>
+        <div className="display" style={{ fontSize: 19, marginTop: 16 }}>nexmeet.app/e/{slug}</div>
         <div className="lead" style={{ fontSize: 13, marginTop: 4 }}>Scan to join · no login needed</div>
       </div>
       <div className="row gap10 center" style={{ marginTop: 26 }}>
-        <button className="btn btn-ghost"><Icon name="copy" size={18} /> Copy link</button>
-        <button className="btn btn-primary" onClick={onLaunch}><Icon name="grid" size={18} /> Open live dashboard</button>
+        <button type="button" className="btn btn-ghost"><Icon name="copy" size={18} /> Copy link</button>
+        <button type="button" className="btn btn-primary" onClick={onLaunch}><Icon name="grid" size={18} /> Open live dashboard</button>
       </div>
     </div>
   );
@@ -256,7 +436,14 @@ function StepLive({ details, themeObj, onLaunch }: { details: Details; themeObj:
 
 export default function OrganizerCreate({ defaults, applyTheme, onHome, onExit, onLaunch }: OrganizerCreateProps) {
   const [step, setStep] = useState(0);
-  const [details, setDetails] = useState<Details>(defaults || { title: "", about: "", type: "hackathon" });
+  const [details, setDetails] = useState<Details>({
+    title: defaults?.title || "",
+    about: defaults?.about || "",
+    type: defaults?.type || "hackathon",
+    date: defaults?.date || "",
+    venue: defaults?.venue || "",
+    matchCount: defaults?.matchCount || "3",
+  });
   const [theme, setTheme] = useState("ember");
   const [questions, setQuestions] = useState<Question[]>(baseQuestions("hackathon"));
   const [timing, setTiming] = useState<Timing>({ mode: "during", when: "" });
@@ -274,22 +461,14 @@ export default function OrganizerCreate({ defaults, applyTheme, onHome, onExit, 
   }, [step]);
 
   const set = (k: string, v: string) => setDetails(d => ({ ...d, [k]: v }));
-  const detailsValid = details.title.trim() && details.about.trim();
+  const detailsValid = details.title.trim() && details.about.trim() && details.date.trim() && details.venue.trim();
   const themeObj = THEMES.find(x => x.id === theme) || THEMES[0];
 
   const goBack = () => { if (step === 0) (onHome || onExit)(); else if (step === 2) setStep(0); else setStep(s => s - 1); };
 
   return (
-    <div className="org screen-enter" style={{ display: "flex", flexDirection: "column" }}>
-      <div style={{ borderBottom: "1px solid var(--line)", flex: "0 0 auto" }}>
-        <div style={{ maxWidth: 1080, margin: "0 auto", padding: "18px 28px" }} className="row between">
-          <div className="row gap14" style={{ alignItems: "center" }}>
-            <Logo size={20} />
-            <span style={{ padding: "5px 11px", borderRadius: 999, background: "var(--card)", border: "1px solid var(--card-edge)", fontSize: 12.5, fontWeight: 700 }}>New event</span>
-          </div>
-          <button className="btn btn-ghost btn-sm" onClick={onExit}><Icon name="eye" size={16} /> Attendee view</button>
-        </div>
-      </div>
+    <div className="org screen-enter" style={{ display: "flex", flexDirection: "column", height: '100%' }}>
+
 
       {step !== 4 && (
         <div style={{ maxWidth: 1080, margin: "0 auto", width: "100%", padding: "22px 28px 0", flex: "0 0 auto" }}>
@@ -310,7 +489,7 @@ export default function OrganizerCreate({ defaults, applyTheme, onHome, onExit, 
       )}
 
       <div className="grow" style={{ overflowY: "auto" }}>
-        <div style={{ maxWidth: step === 2 ? 980 : 680, margin: "0 auto", padding: "30px 28px 40px" }} key={step}>
+        <div style={{ maxWidth: step === 0 ? 1080 : (step === 2 ? 980 : 680), margin: "0 auto", padding: "30px 28px 40px" }} key={step}>
           {step === 0 && <StepDetails details={details} set={set} />}
           {step === 1 && <StepGenerating details={details} />}
           {step === 2 && <StepReview details={details} themeObj={themeObj} themeId={theme} onTheme={(id) => { setTheme(id); applyTheme(THEMES.find(x => x.id === id)); }} questions={questions} setQuestions={setQuestions} />}
@@ -321,11 +500,11 @@ export default function OrganizerCreate({ defaults, applyTheme, onHome, onExit, 
 
       {step !== 1 && step !== 4 && (
         <div style={{ borderTop: "1px solid var(--line)", flex: "0 0 auto", background: "var(--paper)" }}>
-          <div style={{ maxWidth: step === 2 ? 980 : 680, margin: "0 auto", padding: "16px 28px" }} className="row between">
-            <button className="btn btn-ghost" onClick={goBack}><Icon name="back" size={18} /> Back</button>
-            {step === 0 && <button className="btn btn-primary" disabled={!detailsValid} onClick={() => setStep(1)} style={{ opacity: detailsValid ? 1 : .4 }}><Icon name="spark" size={18} /> Generate with AI</button>}
-            {step === 2 && <button className="btn btn-primary" onClick={() => setStep(3)}>Looks good <Icon name="arrow" size={18} /></button>}
-            {step === 3 && <button className="btn btn-primary" onClick={() => setStep(4)}><Icon name="bolt" size={18} /> Launch event</button>}
+          <div style={{ maxWidth: step === 0 ? 1080 : (step === 2 ? 980 : 680), margin: "0 auto", padding: "16px 28px" }} className="row between">
+            <button type="button" className="btn btn-ghost" onClick={goBack}><Icon name="back" size={18} /> Back</button>
+            {step === 0 && <button type="button" className="btn btn-primary" disabled={!detailsValid} onClick={() => setStep(1)} style={{ opacity: detailsValid ? 1 : .4 }}><Icon name="spark" size={18} /> Generate with AI</button>}
+            {step === 2 && <button type="button" className="btn btn-primary" onClick={() => setStep(3)}>Looks good <Icon name="arrow" size={18} /></button>}
+            {step === 3 && <button type="button" className="btn btn-primary" onClick={() => setStep(4)}><Icon name="bolt" size={18} /> Launch event</button>}
           </div>
         </div>
       )}

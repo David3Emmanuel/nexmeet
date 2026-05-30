@@ -73,7 +73,16 @@ export default function MapScreen({ you, matches, granted, onGrant, onSkip, onOp
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <div style={{ padding: "4px 24px 12px", flex: "0 0 auto" }}>
+      <div style={{
+        position: 'sticky',
+        top: 0,
+        background: 'color-mix(in srgb, var(--paper) 85%, transparent)',
+        backdropFilter: 'blur(12px)',
+        padding: "16px 24px 12px",
+        borderBottom: '1px solid var(--line)',
+        zIndex: 100,
+        flexShrink: 0,
+      }}>
         <div className="eyebrow">Live map · {EVENT.name}</div>
         <h1 className="display" style={{ fontSize: 26, marginTop: 8 }}>You &amp; your people</h1>
       </div>

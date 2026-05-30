@@ -40,7 +40,16 @@ export default function FormScreen({ initial, onBack, onSubmit }: FormScreenProp
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <div style={{ padding: "4px 22px 0" }}>
+      <div style={{
+        position: 'sticky',
+        top: 0,
+        background: 'color-mix(in srgb, var(--paper) 85%, transparent)',
+        backdropFilter: 'blur(12px)',
+        padding: "16px 22px",
+        borderBottom: '1px solid var(--line)',
+        zIndex: 100,
+        flexShrink: 0,
+      }}>
         <div className="row gap12" style={{ alignItems: "center" }}>
           <button className="icon-btn" onClick={back}><Icon name="back" size={20} /></button>
           <div className="progress-track grow">

@@ -22,9 +22,9 @@ export default function CoverScreen({ onStart, onOrganizer }: CoverScreenProps) 
         </div>
       </div>
 
-      <div style={{ padding: "30px 26px 0", flex: 1, display: "flex", flexDirection: "column" }}>
+      <div style={{ padding: "48px 26px 0", flex: 1, display: "flex", flexDirection: "column" }}>
         <div className="eyebrow anim-up">You're in the room · live now</div>
-        <h1 className="display anim-up d1" style={{ fontSize: 52, marginTop: 14 }}>
+        <h1 className="display anim-up d1" style={{ fontSize: 44, marginTop: 14, lineHeight: 1.05 }}>
           Meet the<br />right people.<br /><span style={{ color: "var(--accent)" }}>Every time.</span>
         </h1>
         <p className="lead anim-up d2" style={{ fontSize: 17, marginTop: 18, maxWidth: 320 }}>

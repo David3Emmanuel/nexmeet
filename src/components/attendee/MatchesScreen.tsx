@@ -27,7 +27,16 @@ export default function MatchesScreen({ you, matches, count, onOpen, onMap, onRe
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <div style={{ padding: "4px 24px 14px" }}>
+      <div style={{
+        position: 'sticky',
+        top: 0,
+        background: 'color-mix(in srgb, var(--paper) 85%, transparent)',
+        backdropFilter: 'blur(12px)',
+        padding: "16px 24px",
+        borderBottom: '1px solid var(--line)',
+        zIndex: 100,
+        flexShrink: 0,
+      }}>
         <div className="row between" style={{ alignItems: "center" }}>
           <Logo size={19} />
           <button className="chip" onClick={onRestart} style={{ padding: "8px 12px", fontSize: 12.5 }}>

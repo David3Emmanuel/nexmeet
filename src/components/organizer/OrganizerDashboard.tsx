@@ -18,11 +18,11 @@ function Stat({ label, value, accent, icon, big, live }: { label: string; value:
   return (
     <div className="stat-card" style={{ borderTop: "3px solid " + accent }}>
       <div className="row between" style={{ alignItems: "center" }}>
-        <span style={{ color: accent }}><Icon name={icon} size={20} /></span>
-        {live && <span style={{ width: 8, height: 8, borderRadius: "50%", background: accent, animation: "pulse 1.6s infinite" }} />}
+        <span style={{ color: accent, display: "flex" }}><Icon name={icon} size={18} /></span>
+        {live && <span style={{ width: 7, height: 7, borderRadius: "50%", background: accent, animation: "pulse 1.6s infinite" }} />}
       </div>
-      <div className="display" style={{ fontSize: big ? 40 : 34, marginTop: 14 }}>{value}</div>
-      <div className="lead" style={{ fontSize: 13.5, marginTop: 4 }}>{label}</div>
+      <div className={`display stat-value ${big ? 'stat-value-big' : ''}`}>{value}</div>
+      <div className="lead stat-label">{label}</div>
     </div>
   );
 }
@@ -89,7 +89,7 @@ export default function OrganizerDashboard({ event, onExit, onNewEvent, onHome }
     <div className="org screen-enter">
       <div className="org-inner">
         <div className="row between wrap gap16" style={{ alignItems: "center", marginBottom: 28 }}>
-          <div className="row gap14" style={{ alignItems: "center" }}>
+          <div className="row gap14 desktop-only" style={{ alignItems: "center" }}>
             <button onClick={onHome} style={{ display: "flex" }}><Logo size={22} /></button>
             <span style={{ padding: "6px 12px", borderRadius: 999, background: "var(--card)", border: "1px solid var(--card-edge)", fontSize: 13, fontWeight: 700 }}>Organizer</span>
           </div>
@@ -97,8 +97,14 @@ export default function OrganizerDashboard({ event, onExit, onNewEvent, onHome }
             <span className="row gap8" style={{ fontSize: 13.5, fontWeight: 700, color: "var(--forest)", alignItems: "center" }}>
               <span style={{ width: 9, height: 9, borderRadius: "50%", background: "var(--forest)", animation: "pulse 1.6s infinite" }} /> Live
             </span>
-            <button className="btn btn-ghost btn-sm" onClick={onNewEvent}><Icon name="spark" size={16} /> New event</button>
-            <button className="btn btn-ghost btn-sm" onClick={onExit}><Icon name="eye" size={16} /> Attendee view</button>
+            <button className="btn btn-ghost btn-sm btn-save" onClick={onNewEvent} title="New event">
+              <Icon name="spark" size={16} />
+              <span className="btn-save-text">New event</span>
+            </button>
+            <button className="btn btn-ghost btn-sm btn-save" onClick={onExit} title="Attendee view">
+              <Icon name="eye" size={16} />
+              <span className="btn-save-text">Attendee view</span>
+            </button>
           </div>
         </div>
 
@@ -115,7 +121,7 @@ export default function OrganizerDashboard({ event, onExit, onNewEvent, onHome }
           )}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 16, marginBottom: 22 }}>
+        <div className="dashboard-stats-grid">
           <Stat label="Attendees in room" value={count} accent="var(--coral)" icon="users" big live />
           <Stat label="Matches generated" value={matchesMade} accent="var(--plum)" icon="spark" />
           <Stat label="Form completion" value={completion + "%"} accent="var(--forest)" icon="check" />

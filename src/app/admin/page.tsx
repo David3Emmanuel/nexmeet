@@ -1,20 +1,6 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { useEffect } from 'react';
-import OrganizerDashboard from '@/components/organizer/OrganizerDashboard';
-
+// Old /admin route — redirect to the proper organizer dashboard
 export default function AdminPage() {
-  useEffect(() => {
-    document.documentElement.removeAttribute("data-theme");
-  }, []);
-
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "var(--paper)", overflow: "hidden" }}>
-      <OrganizerDashboard
-        onExit={() => window.location.href = "/"}
-        onHome={() => window.location.href = "/organizer"}
-        onNewEvent={() => window.location.href = "/organizer/create"}
-      />
-    </div>
-  );
+  redirect('/organizer/dashboard/buildwithai-lagos-26');
 }
