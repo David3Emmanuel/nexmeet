@@ -129,12 +129,24 @@ export default function AuthFlow() {
       alignItems: 'center',
       justifyContent: 'center',
       padding: '24px 16px',
-      background: 'var(--paper)',
+      backgroundColor: '#120F0C',
       position: 'relative',
       overflow: 'hidden',
     }}>
+      {/* Background Image with Gradient Overlay */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        backgroundImage: 'linear-gradient(to bottom, rgba(18, 15, 12, 0.6) 0%, rgba(18, 15, 12, 0.75) 60%, rgba(18, 15, 12, 0.95) 100%), url("/hero-bg.jpg")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        pointerEvents: 'none',
+        zIndex: 0,
+      }} />
+
       {/* Background orbs */}
-      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 1 }}>
         <div style={{ position: 'absolute', top: '-20%', right: '-10%', width: 480, height: 480, borderRadius: '50%', background: 'radial-gradient(circle, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%)', animation: 'float 8s ease-in-out infinite' }} />
         <div style={{ position: 'absolute', bottom: '-15%', left: '-8%', width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, color-mix(in srgb, var(--plum) 10%, transparent), transparent 70%)', animation: 'float 10s ease-in-out infinite 2s' }} />
       </div>
@@ -142,7 +154,7 @@ export default function AuthFlow() {
       <div style={{ width: '100%', maxWidth: 420, position: 'relative', zIndex: 1 }}>
         {/* Logo */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 40 }}>
-          <Logo size={24} />
+          <Logo size={24} dark />
         </div>
 
         {/* Card */}

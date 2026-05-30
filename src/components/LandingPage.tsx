@@ -29,8 +29,8 @@ const STEPS = [
   {
     num: '03',
     icon: 'spark',
-    title: 'AI finds their 3 people',
-    body: 'The AI reads every profile in the room and gives each person the 3 connections they can\'t afford to miss — with a conversation starter.',
+    title: 'AI finds their best matches',
+    body: 'The AI reads every profile in the room and gives each person the exact connections they can\'t afford to miss — with a conversation starter.',
     accent: 'var(--forest)',
   },
 ];
@@ -185,7 +185,7 @@ export default function LandingPage() {
           <h2 className="display" style={{ fontSize: 'clamp(34px, 5.5vw, 54px)', lineHeight: 1.15 }}>From idea to live in 3 steps</h2>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 28 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 28, alignItems: 'stretch' }}>
           {STEPS.map((s, i) => (
             <div
               key={i}
@@ -242,7 +242,7 @@ export default function LandingPage() {
               What your attendees see
             </h2>
             <p className="lead" style={{ fontSize: 17, lineHeight: 1.6, marginBottom: 28 }}>
-              A clean, fast, mobile-first flow. Attendees fill 6 questions, see a loader as the AI thinks, then get 3 personalised match cards with a conversation starter for each.
+              A clean, fast, mobile-first flow. Attendees fill a quick form, see a loader as the AI thinks, then get their best personalised match cards with a conversation starter for each.
             </p>
             <button className="btn btn-primary" onClick={() => router.push('/auth')}>
               <Icon name="spark" size={18} /> Host your first event
@@ -309,14 +309,22 @@ export default function LandingPage() {
         <p style={{ fontSize: 18, fontWeight: 600, opacity: 0.65, marginBottom: 36, maxWidth: 480, margin: '0 auto 36px' }}>
           Set up your room in 2 minutes. Go live instantly.
         </p>
-        <button
-          id="footer-cta"
-          className="btn btn-primary"
-          style={{ fontSize: 17, minHeight: 58 }}
-          onClick={() => router.push('/auth')}
-        >
-          <Icon name="spark" size={20} /> Get started now
-        </button>
+        <form onSubmit={handleGetStarted} className="hero-email-form" style={{ maxWidth: 480, margin: '0 auto' }}>
+          <input
+            type="email"
+            placeholder="Email address"
+            value={heroEmail}
+            onChange={e => setHeroEmail(e.target.value)}
+            required
+            className="hero-email-input"
+          />
+          <button
+            type="submit"
+            className="hero-get-started-btn"
+          >
+            Get Started <Icon name="arrow" size={18} />
+          </button>
+        </form>
       </section>
 
       {/* ─── Footer ─── */}
@@ -326,7 +334,7 @@ export default function LandingPage() {
         padding: 'clamp(24px, 3vw, 36px) clamp(20px, 5vw, 80px)',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16,
       }}>
-        <Logo size={17} />
+        <Logo size={17} dark />
         <div style={{ display: 'flex', gap: 24, fontSize: 13.5, fontWeight: 600, color: 'rgba(255,255,255,.4)', flexWrap: 'wrap' }}>
           {['Privacy', 'Terms', 'Contact'].map(l => (
             <a key={l} href="#" style={{ color: 'inherit', textDecoration: 'none' }}>{l}</a>
