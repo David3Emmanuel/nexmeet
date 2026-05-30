@@ -46,13 +46,14 @@ function baseQuestions(type: string) {
   ];
 }
 
-interface Details { 
-  title: string; 
-  about: string; 
-  type: string; 
+interface Details {
+  title: string;
+  about: string;
+  type: string;
   date: string;
   venue: string;
   flyer?: string | null;
+  matchCount?: string;
 }
 
 interface Timing { mode: string; when: string; }

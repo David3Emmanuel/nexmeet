@@ -26,6 +26,11 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  await pool.query(
+    `INSERT INTO organizers (email) VALUES ($1) ON CONFLICT (email) DO NOTHING`,
+    [email],
+  )
+
   const token = await signToken(email)
   const options = await sessionCookieOptions()
 
