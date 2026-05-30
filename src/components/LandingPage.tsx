@@ -81,12 +81,13 @@ export default function LandingPage() {
     <div style={{ background: 'var(--paper)', overflowX: 'hidden' }}>
       {/* ─── Navbar ─── */}
       <nav style={{
-        position: 'sticky',
+        position: 'absolute',
         top: 0,
+        left: 0,
+        right: 0,
         zIndex: 100,
-        borderBottom: '1px solid var(--line)',
-        background: 'color-mix(in srgb, var(--paper) 85%, transparent)',
-        backdropFilter: 'blur(14px)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+        background: 'linear-gradient(to bottom, rgba(18, 15, 12, 0.7) 0%, transparent 100%)',
         padding: '0 clamp(20px, 5vw, 60px)',
         display: 'flex',
         alignItems: 'center',
@@ -100,7 +101,7 @@ export default function LandingPage() {
           alignItems: 'center',
           justifyContent: 'space-between',
         }}>
-          <Logo size={25} />
+          <Logo size={34} dark />
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button
               id="nav-signin"
@@ -116,13 +117,13 @@ export default function LandingPage() {
 
       {/* ─── Hero ─── */}
       <section ref={heroRef} style={{
-        minHeight: 'calc(100vh - 62px)',
+        minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         textAlign: 'center',
-        padding: '24px clamp(16px, 4vw, 40px)',
+        padding: 'clamp(96px, 12vw, 130px) clamp(16px, 4vw, 40px) 48px',
         position: 'relative',
         overflow: 'hidden',
         backgroundColor: '#120F0C',
