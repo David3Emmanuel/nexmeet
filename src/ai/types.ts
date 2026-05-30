@@ -27,5 +27,14 @@ export interface MatchResult {
   attendeeId: string;
   matches: AttendeeMatch[];
 }
+export interface Theme {
+  background: string;        // page background, hex
+  foreground: string;        // primary text on background, hex
+  accent: string;            // brand/CTA color pulled from the flyer, hex
+  accentForeground: string;  // text/icon color that sits ON accent, hex
+  fontFamily: string;        // ready-to-use CSS font-family stack
+  fontKind: "sans" | "serif" | "display" | "mono";  // which kind to load
+  mood: string;              // one-line description of the vibe, for sanity-checking
+}
 
 // Theme interface goes here when we build Task 3.
