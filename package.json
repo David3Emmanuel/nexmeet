@@ -11,19 +11,28 @@
   "dependencies": {
     "framer-motion": "^12.40.0",
     "gsap": "^3.15.0",
+    "@google/genai": "^2.7.0",
+    "dotenv": "^17.4.2",
+    "jsonwebtoken": "^9.0.3",
     "next": "16.2.6",
+    "nodemailer": "^8.0.10",
+    "pg": "^8.21.0",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
+    "@types/nodemailer": "^8.0.0",
+    "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
+    "tsx": "^4.22.3",
     "typescript": "^5"
   }
 }

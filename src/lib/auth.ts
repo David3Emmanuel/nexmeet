@@ -1,80 +1,35 @@
-/* ================================================================
-   NexMeet — Auth utilities (mock / client-side)
-   In production: replace sendOtp/verifyOtp with API calls to
-   your backend (Resend, SendGrid, etc.) and use server sessions.
-   ================================================================ */
+import jwt from 'jsonwebtoken'
+import { cookies } from 'next/headers'
 
-const OTP_KEY = 'nm_otp';
-const SESSION_KEY = 'nm_session';
-const ONBOARDED_KEY = 'nm_onboarded';
+const SECRET = process.env.AUTH_SECRET!
+const COOKIE = 'nexmeet_session'
 
-export interface NexSession {
-  email: string;
-  name?: string;
-  createdAt: number;
+export function signToken(email: string): string {
+  return jwt.sign({ email }, SECRET, { expiresIn: '7d' })
 }
 
-/** Generate and "send" a 5-digit OTP. Returns the code so the
- *  dev console can confirm it. In production, send via email. */
-export function sendOtp(email: string): string {
-  const code = String(Math.floor(10000 + Math.random() * 90000));
-  if (typeof window !== 'undefined') {
-    sessionStorage.setItem(OTP_KEY, JSON.stringify({ email: email.toLowerCase(), code, exp: Date.now() + 10 * 60 * 1000 }));
-  }
-  // TODO: replace with real email send
-  console.info(`[NexMeet OTP] Code for ${email}: ${code}`);
-  return code;
-}
-
-/** Verify the OTP against the stored value. */
-export function verifyOtp(email: string, code: string): boolean {
-  if (typeof window === 'undefined') return false;
+export function verifyToken(token: string): { email: string } | null {
   try {
-    const raw = sessionStorage.getItem(OTP_KEY);
-    if (!raw) return false;
-    const stored = JSON.parse(raw) as { email: string; code: string; exp: number };
-    if (stored.email !== email.toLowerCase()) return false;
-    if (Date.now() > stored.exp) return false;
-    return stored.code === code.trim();
+    return jwt.verify(token, SECRET) as { email: string }
   } catch {
-    return false;
+    return null
   }
 }
 
-/** Persist the session after successful OTP verification. */
-export function setSession(email: string, name?: string): void {
-  if (typeof window === 'undefined') return;
-  const session: NexSession = { email: email.toLowerCase(), name, createdAt: Date.now() };
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  sessionStorage.removeItem(OTP_KEY);
+export async function getSession(): Promise<{ email: string } | null> {
+  const cookieStore = await cookies()
+  const token = cookieStore.get(COOKIE)?.value
+  if (!token) return null
+  return verifyToken(token)
 }
 
-/** Read the current session. Returns null if not logged in. */
-export function getSession(): NexSession | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = localStorage.getItem(SESSION_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as NexSession;
-  } catch {
-    return null;
+export function sessionCookieOptions() {
+  return {
+    name: COOKIE,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax' as const,
+    path: '/',
+    maxAge: 60 * 60 * 24 * 7, // 7 days
   }
-}
-
-/** Clear the session (logout). */
-export function clearSession(): void {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem(SESSION_KEY);
-}
-
-/** Returns true if this is a first-time login (onboarding tour needed). */
-export function isNewUser(): boolean {
-  if (typeof window === 'undefined') return false;
-  return !localStorage.getItem(ONBOARDED_KEY);
-}
-
-/** Mark the onboarding tour as completed so it never replays. */
-export function markOnboarded(): void {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(ONBOARDED_KEY, '1');
 }
