@@ -1,17 +1,17 @@
-import { Type } from "@google/genai";
-import { ai } from "../clients";
-import { EventInfo, FormQuestion } from "@/lib/types";
-import { buildQuestionPrompt } from "./prompts";
+import { Type } from '@google/genai'
+import { ai } from '../clients'
+import { EventInfo, FormQuestion } from '@/lib/types'
+import { buildQuestionPrompt } from './prompts'
 
 export async function generateFormQuestions(
   event: EventInfo,
-  questionCount: number = 5
+  questionCount: number = 5,
 ): Promise<FormQuestion[]> {
   const response = await ai.models.generateContent({
-    model: "gemini-3.5-flash",
+    model: 'gemini-3.5-flash',
     contents: buildQuestionPrompt(event, questionCount),
     config: {
-      responseMimeType: "application/json",
+      responseMimeType: 'application/json',
       responseSchema: {
         type: Type.ARRAY,
         minItems: questionCount,
@@ -23,11 +23,14 @@ export async function generateFormQuestions(
             question: { type: Type.STRING },
             helperText: { type: Type.STRING },
           },
-          required: ["id", "question", "helperText"],
+          required: ['id', 'question', 'helperText'],
         },
       },
     },
-  });
+  })
 
-  return JSON.parse(response.text ?? "[]") as FormQuestion[];
+  return (JSON.parse(response.text ?? '[]') as FormQuestion[]).slice(
+    0,
+    questionCount,
+  )
 }
