@@ -35,9 +35,8 @@ CANDIDATES (everyone else in the room):
 ${candidates.map((c) => formatMatchAttendee(c, questions)).join("\n\n")}
 
 Decide who is genuinely worth this attendee's time. Around ${target} is typical, but that is only a guide:
-- Include MORE if there are genuinely more strong, high-value matches in the room.
-- Include FEWER (even 1, or 0) if the strong matches run out. Do NOT pad with weak matches to reach a number, and do NOT drop a great match just to stay near it.
-- A match earns its place only on MUTUAL VALUE: one person needs what the other offers (skills, funding, hiring, advice, collaboration). "You both like X" is the weakest possible reason; avoid it unless nothing better exists.
+- You MUST provide AT LEAST 1 match for this attendee. Do NOT leave them unconnected (0 matches).
+- If there are no obvious strong matches, you must creatively find a shared interest or a general professional overlap as a fallback. Every person must walk away with a connection.
 - Lean on each person's "looking-for" and goals as the strongest signal.
 
 For each match, write ONE specific reason (1-2 sentences) naming the concrete thing that makes it worth their time. Reference real details from both profiles. Speak TO the attendee about the person they should meet. Never generic.

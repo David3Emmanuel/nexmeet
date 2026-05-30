@@ -293,9 +293,16 @@ export default function OrganizerDashboard({ eventId, onExit, onNewEvent, onHome
               <thead>
                 <tr style={{ textAlign: "left", color: "var(--ink-3)", fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em" }}>
                   <th style={{ padding: "8px 10px", fontWeight: 800 }}>Name</th>
-                  <th style={{ padding: "8px 10px", fontWeight: 800 }}>Role</th>
-                  <th style={{ padding: "8px 10px", fontWeight: 800 }}>Looking for</th>
-                  <th style={{ padding: "8px 10px", fontWeight: 800 }}>Skills</th>
+                  {(eventData?.formFields || []).slice(0, 3).map((f: any) => (
+                    <th key={f.id} style={{ padding: "8px 10px", fontWeight: 800 }}>{f.question}</th>
+                  ))}
+                  {(!eventData?.formFields || eventData.formFields.length === 0) && (
+                    <>
+                      <th style={{ padding: "8px 10px", fontWeight: 800 }}>Role</th>
+                      <th style={{ padding: "8px 10px", fontWeight: 800 }}>Looking for</th>
+                      <th style={{ padding: "8px 10px", fontWeight: 800 }}>Skills</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -307,19 +314,28 @@ export default function OrganizerDashboard({ eventId, onExit, onNewEvent, onHome
                         <span style={{ fontWeight: 700, fontSize: 14 }}>{p.name}</span>
                       </div>
                     </td>
-                    <td style={{ padding: "12px 10px", fontSize: 13.5, color: "var(--ink-2)" }}>{p.responses?.role || '—'}</td>
-                    <td style={{ padding: "12px 10px" }}>
-                      <span style={{ fontSize: 12.5, fontWeight: 700, padding: "4px 10px", borderRadius: 999, background: "color-mix(in srgb, var(--accent) 12%, transparent)", color: "var(--accent)" }}>
-                        {p.responses?.looking || '—'}
-                      </span>
-                    </td>
-                    <td style={{ padding: "12px 10px" }}>
-                      <div className="row gap6">
-                        {(p.responses?.skills?.split(',') || []).slice(0, 2).map((s: string) => (
-                          <span key={s} style={{ fontSize: 12, color: "var(--ink-3)", padding: "3px 8px", border: "1px solid var(--card-edge)", borderRadius: 999 }}>{s}</span>
-                        ))}
-                      </div>
-                    </td>
+                    {(eventData?.formFields || []).slice(0, 3).map((f: any) => (
+                      <td key={f.id} style={{ padding: "12px 10px", fontSize: 13.5, color: "var(--ink-2)", maxWidth: 200, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {p.responses?.[f.id] || '—'}
+                      </td>
+                    ))}
+                    {(!eventData?.formFields || eventData.formFields.length === 0) && (
+                      <>
+                        <td style={{ padding: "12px 10px", fontSize: 13.5, color: "var(--ink-2)" }}>{p.responses?.role || '—'}</td>
+                        <td style={{ padding: "12px 10px" }}>
+                          <span style={{ fontSize: 12.5, fontWeight: 700, padding: "4px 10px", borderRadius: 999, background: "color-mix(in srgb, var(--accent) 12%, transparent)", color: "var(--accent)" }}>
+                            {p.responses?.looking || '—'}
+                          </span>
+                        </td>
+                        <td style={{ padding: "12px 10px" }}>
+                          <div className="row gap6">
+                            {(p.responses?.skills?.split(',') || []).slice(0, 2).map((s: string) => (
+                              <span key={s} style={{ fontSize: 12, color: "var(--ink-3)", padding: "3px 8px", border: "1px solid var(--card-edge)", borderRadius: 999 }}>{s}</span>
+                            ))}
+                          </div>
+                        </td>
+                      </>
+                    )}
                   </tr>
                 ))}
                 {attendees.length === 0 && (

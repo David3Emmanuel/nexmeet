@@ -52,7 +52,13 @@ async function matchOne(
     },
   });
 
-  const raw = JSON.parse(response.text ?? "[]") as AttendeeMatch[];
+  let raw: AttendeeMatch[] = [];
+  try {
+    const text = response.text?.replace(/```json\n?/g, '').replace(/```\n?/g, '') ?? "[]";
+    raw = JSON.parse(text) as AttendeeMatch[];
+  } catch (e) {
+    console.error("Failed to parse match JSON:", response.text);
+  }
 
   // Drop hallucinated ids, dedupe, apply runaway guard.
   const seen = new Set<string>();
@@ -60,6 +66,16 @@ async function matchOne(
     .filter((m) => validIds.has(m.matchedAttendeeId))
     .filter((m) => (seen.has(m.matchedAttendeeId) ? false : seen.add(m.matchedAttendeeId)))
     .slice(0, SAFETY_MAX);
+
+  // Hard fallback: If the AI returned 0 matches, force a random connection
+  if (matches.length === 0 && candidates.length > 0) {
+    const fallback = candidates[Math.floor(Math.random() * candidates.length)];
+    matches.push({
+      matchedAttendeeId: fallback.id,
+      matchedName: fallback.name,
+      reason: "We connected you to ensure everyone meets someone new! Ask them what they are building.",
+    });
+  }
 
   return { attendeeId: focal.id, matches };
 }
@@ -82,7 +98,13 @@ async function generateReason(
       },
     },
   });
-  const parsed = JSON.parse(response.text ?? "{}") as { reason?: string };
+  let parsed = { reason: '' };
+  try {
+    const text = response.text?.replace(/```json\n?/g, '').replace(/```\n?/g, '') ?? "{}";
+    parsed = JSON.parse(text);
+  } catch (e) {
+    console.error("Failed to parse reason JSON:", response.text);
+  }
   return parsed.reason ?? `${target.name} is looking to connect with you at this event.`;
 }
 
