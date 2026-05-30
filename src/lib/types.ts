@@ -4,9 +4,24 @@ export interface Organizer {
 }
 
 export interface ThemeConfig {
-  accentColor: string
-  font: string
+  foreground: string
+  background: string
+  accent: string
+  fontFamily: string
 }
+
+export interface FormField {
+  label: string
+  type: 'text' | 'email' | 'phone' | 'textarea'
+  required: boolean
+}
+
+export const baseFormFields: FormField[] = [
+  { label: 'Name', type: 'text', required: true },
+  { label: 'Email', type: 'email', required: true },
+  { label: 'Phone', type: 'phone', required: true },
+  { label: 'Who are you looking to meet?', type: 'textarea', required: false },
+]
 
 export interface Event {
   id: string
@@ -14,9 +29,9 @@ export interface Event {
   title: string
   about: string
   coverImageUrl: string
-  formFields: string[]
+  formFields: FormField[]
   themeConfig?: ThemeConfig
-  matchTime: Date
+  matchTimes: Date[]
   matched: boolean
 }
 
