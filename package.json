@@ -23,15 +23,6 @@
     "react-qr-code": "^2.0.21",
     "sonner": "^2.0.7"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@google/genai",
-      "esbuild",
-      "protobufjs",
-      "sharp",
-      "unrs-resolver"
-    ]
-  },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/jsonwebtoken": "^9.0.10",

@@ -1,5 +1,5 @@
 onlyBuiltDependencies:
-  - '@google/genai'
+  - "@google/genai"
   - esbuild
   - protobufjs
   - sharp
