@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/Icon';
 import Avatar from '@/components/ui/Avatar';
 
@@ -21,7 +20,7 @@ export default function FindingScreen({ you, onDone }: FindingScreenProps) {
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 32px 60px", textAlign: "center" }}>
         
-        {/* Animated Check */}
+        {/* Simple Clean Check */}
         <div style={{ position: "relative", width: 90, height: 90, margin: "0 auto 30px" }}>
           <div style={{
             position: "absolute", inset: 0,
@@ -40,22 +39,23 @@ export default function FindingScreen({ you, onDone }: FindingScreenProps) {
         </div>
 
         <h2 className="display" style={{ fontSize: 32, lineHeight: 1.1 }}>
-          You&apos;re registered!
+          You&apos;re all set.
         </h2>
         
         <p className="lead" style={{ marginTop: 14, fontSize: 16.5, maxWidth: 300, margin: "14px auto 0" }}>
-          Go grab a drink and enjoy the event. We&apos;ll notify you when the organizer runs the matchmaking.
+          Enjoy the event! We&apos;ll notify you as soon as your connections are ready.
         </p>
 
+        {/* Clean minimal indicator */}
         <div style={{ marginTop: 36, padding: "20px", background: "var(--card)", border: "1px solid var(--card-edge)", borderRadius: 20 }}>
           <div className="row gap12" style={{ alignItems: "center", justifyContent: "center", color: "var(--ink-2)", fontSize: 14.5, fontWeight: 600 }}>
-            <span style={{ animation: "spin 3s linear infinite", display: "inline-block" }}>
+            <span style={{ animation: "pulse 2s infinite", display: "inline-block" }}>
               <Icon name="spark" size={18} />
             </span>
-            Listening for matches…
+            Analyzing profiles...
           </div>
           <div style={{ marginTop: 8, fontSize: 13, color: "var(--ink-3)" }}>
-            You can safely close this page or keep it open. It will automatically update when your AI matches are ready.
+            Feel free to close this page. We&apos;ll let you know when it&apos;s done.
           </div>
         </div>
       </div>

@@ -153,24 +153,24 @@ export default function OrganizerDashboard({ eventId, onExit, onNewEvent, onHome
 
   const triggerMatch = async () => {
     if (count < 2) {
-      toast.error('Not enough attendees', { description: 'At least 2 people need to join before matching.' });
+      toast.error('Not enough attendees', { description: 'At least 2 people need to join before curating connections.' });
       return;
     }
     setIsMatching(true);
-    const toastId = toast.loading('Running AI matching engine...');
+    const toastId = toast.loading('Running AI curation engine...');
     try {
       const res = await fetch(`/api/events/${eventId}/match`, { method: 'POST' });
       const data = await res.json();
       if (data.matched) {
         setEventData({ ...eventData, matched: true });
         setMatchesMade(data.matched);
-        toast.success(`Matched ${data.matched} pairs!`, { id: toastId, description: 'The connections are now live.' });
+        toast.success(`Curated ${data.matched} connections!`, { id: toastId, description: 'The connections are now live.' });
       } else {
-        toast.info('No new matches', { id: toastId, description: 'Everyone is already matched.' });
+        toast.info('No new connections', { id: toastId, description: 'Everyone has been connected.' });
       }
     } catch (e) {
       console.error(e);
-      toast.error('Matching failed', { id: toastId, description: 'Please try again.' });
+      toast.error('Curation failed', { id: toastId, description: 'Please try again.' });
     } finally {
       setIsMatching(false);
     }
@@ -211,11 +211,11 @@ export default function OrganizerDashboard({ eventId, onExit, onNewEvent, onHome
                 style={{ background: 'var(--accent)', color: '#fff', border: 'none', marginLeft: 8 }}
               >
                 <Icon name="spark" size={16} />
-                <span style={{ marginLeft: 6 }}>{isMatching ? 'Matching...' : 'Match Now'}</span>
+                <span style={{ marginLeft: 6 }}>{isMatching ? 'Curating...' : 'Find Connections'}</span>
               </button>
             ) : (
               <span style={{ padding: "6px 12px", borderRadius: 999, background: "color-mix(in srgb, var(--accent) 15%, transparent)", color: "var(--accent)", fontSize: 13, fontWeight: 700, marginLeft: 8 }}>
-                Matched
+                Curated
               </span>
             )}
           </div>
@@ -236,9 +236,9 @@ export default function OrganizerDashboard({ eventId, onExit, onNewEvent, onHome
 
         <div className="dashboard-stats-grid">
           <Stat label="Attendees in room" value={count} accent="var(--coral)" icon="users" big live />
-          <Stat label="Matches generated" value={matchesMade} accent="var(--plum)" icon="spark" />
+          <Stat label="Connections curated" value={matchesMade} accent="var(--plum)" icon="spark" />
           <Stat label="Form completion" value={count > 0 ? `${completion}%` : "—"} accent="var(--forest)" icon="check" />
-          <Stat label="Avg. time to match" value={count > 1 ? "1.2s" : "—"} accent="var(--sky)" icon="bolt" />
+          <Stat label="Avg. curation time" value={count > 1 ? "1.2s" : "—"} accent="var(--sky)" icon="bolt" />
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1.55fr 1fr", gap: 20, alignItems: "start" }} className="org-grid">
@@ -247,7 +247,7 @@ export default function OrganizerDashboard({ eventId, onExit, onNewEvent, onHome
               <h3 className="display" style={{ fontSize: 21 }}>Connection map</h3>
               <span style={{ fontSize: 13, color: "var(--ink-3)", fontWeight: 600 }}>{matchesMade} links</span>
             </div>
-            <p className="lead" style={{ fontSize: 13.5, marginBottom: 8 }}>Every line is a match NexMeet suggested between two attendees.</p>
+            <p className="lead" style={{ fontSize: 13.5, marginBottom: 8 }}>Every line is a connection NexMeet curated between two attendees.</p>
             <ConnectionGraph attendees={attendees} matches={matchPairs} />
           </div>
 

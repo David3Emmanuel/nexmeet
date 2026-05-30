@@ -68,7 +68,7 @@ export default function OrganizerHome({ onCreate, onOpenEvent, onExit }: Organiz
       <div style={{ maxWidth: 1080, margin: "0 auto", padding: "34px 28px 60px" }}>
         <div className="eyebrow">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</div>
         <h1 className="display" style={{ fontSize: 40, marginTop: 12 }}>Welcome back!</h1>
-        <p className="lead" style={{ fontSize: 16, marginTop: 10, maxWidth: 460 }}>Spin up a new event and let the AI handle the form, the theme, and the matching.</p>
+        <p className="lead" style={{ fontSize: 16, marginTop: 10, maxWidth: 460 }}>Spin up a new event and let the AI handle the form, the theme, and the networking connections.</p>
 
         <button onClick={onCreate} className="row gap20" style={{ width: "100%", textAlign: "left", marginTop: 26, padding: 26, borderRadius: 24, border: "1.5px solid var(--card-edge)", background: "linear-gradient(120deg, color-mix(in srgb, var(--accent) 10%, var(--card)), var(--card))", alignItems: "center", boxShadow: "var(--shadow-sm)" }}>
           <span style={{ width: 60, height: 60, borderRadius: 18, background: "var(--accent)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flex: "0 0 auto", boxShadow: "0 8px 22px color-mix(in srgb, var(--accent) 40%, transparent)" }}>
