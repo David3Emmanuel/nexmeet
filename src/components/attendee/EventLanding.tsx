@@ -190,11 +190,12 @@ export default function EventLanding({ event }: { event: EventData }) {
           <div>
             <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>Share this event</div>
             <div style={{ fontSize: 13, color: 'var(--ink-3)', wordBreak: 'break-all' }}>
-              nexmeet.app/e/{event.slug}
+              {typeof window !== 'undefined' ? window.location.host : 'nexmeet.app'}/e/{event.slug}
             </div>
             <button 
               onClick={() => {
-                navigator.clipboard.writeText(`https://nexmeet.app/e/${event.slug}`);
+                const host = typeof window !== 'undefined' ? window.location.origin : 'https://nexmeet.app';
+                navigator.clipboard.writeText(`${host}/e/${event.slug}`);
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
               }}
