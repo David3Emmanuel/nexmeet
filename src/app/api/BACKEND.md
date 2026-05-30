@@ -54,6 +54,14 @@ The database uses a flat relational structure with JSON columns for dynamic fron
                                       │ lng (Float)      │
                                       │ updated_at       │
                                       └──────────────────┘
+
+┌──────────────────┐
+│    OTP Codes     │
+├──────────────────┤
+│ email (PK)       │
+│ code             │
+│ expires_at       │
+└──────────────────┘
 ```
 
 ### 1. Organizers
@@ -101,11 +109,24 @@ A join table populated when the matching mechanism executes.
 - `attendee_a_id`: UUID (Foreign Key -> Attendees.id)
 - `attendee_b_id`: UUID (Foreign Key -> Attendees.id)
 
+### 5. OTP Codes
+
+Transient table for organizer login codes. Rows are deleted on successful verification.
+
+- `email`: Text (Primary Key)
+- `code`: Text (6-digit code)
+- `expires_at`: Timestamp (15-minute TTL)
+
 ## Authentication & Authorization
 
-### Organizer Authentication: Auth0 Passwordless (OTP)
+### Organizer Authentication: Custom OTP
 
-Organizers authenticate via Auth0's passwordless OTP flow — no passwords, no custom JWT logic. Auth0 handles session management and token validation. Protected API routes verify the Auth0 session server-side.
+1. **Request:** Organizer submits their email to `POST /api/auth/otp/request`.
+2. **Issue:** Backend generates a 6-digit code, upserts it into `otp_codes` with a 15-minute expiry, and sends it via Nodemailer.
+3. **Verify:** Organizer submits their email + code to `POST /api/auth/otp/verify`. Backend deletes the row (single-use) and sets an `httpOnly` JWT session cookie valid for 7 days.
+4. **Session:** Protected routes call `getSession()` from `src/lib/auth.ts` to verify the cookie server-side.
+
+Relevant files: `src/lib/auth.ts`, `src/lib/email.ts`
 
 ### Attendee Authentication: Contextual Signed URLs
 
@@ -129,7 +150,25 @@ Each event has a fixed set of base fields followed by AI-generated questions:
 
 ## API Endpoints
 
-### Organizer System (Protected via Auth0)
+### Identity System
+
+#### `POST /api/auth/otp/request`
+
+- **Auth:** Public.
+- **Purpose:** Generates a 6-digit OTP and emails it to the organizer.
+- **Payload:** `{ email: string }`
+- **Response:** `{ success: true }`
+
+#### `POST /api/auth/otp/verify`
+
+- **Auth:** Public.
+- **Purpose:** Verifies the OTP and sets an `httpOnly` session cookie.
+- **Payload:** `{ email: string, code: string }`
+- **Response:** `{ success: true }`
+
+---
+
+### Organizer System (Protected — requires session cookie)
 
 #### `POST /api/events/generate/theme`
 
@@ -154,6 +193,8 @@ Each event has a fixed set of base fields followed by AI-generated questions:
 - **Purpose:** Triggers AI-powered matchmaking for the event. Can also be invoked automatically at a scheduled match time.
 - **Payload:** None
 - **Action:** Queries all attendees and their responses, uses an LLM to pair them, populates the `Matches` table, sets `Events.matched = true`, and sends match notification emails.
+
+---
 
 ### Attendee System (Public & Signed-URL Access)
 
@@ -183,9 +224,3 @@ Each event has a fixed set of base fields followed by AI-generated questions:
     ]
   }
   ```
-
-### Identity System
-
-#### Auth0 OTP Flow
-
-Organizer authentication is handled entirely by Auth0's passwordless flow. No custom `/api/auth` endpoints are needed for OTP dispatch or token exchange — Auth0's SDK handles these automatically.
