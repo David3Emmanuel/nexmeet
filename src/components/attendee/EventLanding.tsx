@@ -25,6 +25,7 @@ export default function EventLanding({ event }: { event: EventData }) {
   const router = useRouter();
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [localEvent, setLocalEvent] = useState<any>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem(`nexmeet:event:${event.slug}`);
@@ -191,8 +192,15 @@ export default function EventLanding({ event }: { event: EventData }) {
             <div style={{ fontSize: 13, color: 'var(--ink-3)', wordBreak: 'break-all' }}>
               nexmeet.app/e/{event.slug}
             </div>
-            <button style={{ marginTop: 8, fontSize: 12.5, fontWeight: 700, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <Icon name="copy" size={14} /> Copy link
+            <button 
+              onClick={() => {
+                navigator.clipboard.writeText(`https://nexmeet.app/e/${event.slug}`);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+              style={{ marginTop: 8, fontSize: 12.5, fontWeight: 700, color: copied ? 'var(--forest)' : 'var(--accent)', display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+            >
+              <Icon name={copied ? "check" : "copy"} size={14} /> {copied ? 'Copied!' : 'Copy link'}
             </button>
           </div>
         </div>

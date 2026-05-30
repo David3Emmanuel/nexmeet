@@ -13,13 +13,7 @@ export default function FindingScreen({ you, onDone, onRestart }: FindingScreenP
   return (
     <div className="scroll screen-enter" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       
-      {/* Top Bar */}
-      <div style={{ padding: "16px 26px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)" }}>NexMeet AI</span>
-        <Avatar name={you.name || "You"} color="var(--accent)" size={32} />
-      </div>
-
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 32px 60px", textAlign: "center" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 32px 60px", textAlign: "center", marginTop: 40 }}>
         
         {/* Simple Clean Check */}
         <div style={{ position: "relative", width: 90, height: 90, margin: "0 auto 30px" }}>
@@ -62,7 +56,7 @@ export default function FindingScreen({ you, onDone, onRestart }: FindingScreenP
 
         {onRestart && (
           <button onClick={onRestart} style={{ marginTop: 32, fontSize: 13.5, fontWeight: 600, color: "var(--ink-3)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 4 }}>
-            Not you? Register someone else.
+            Register another person
           </button>
         )}
       </div>

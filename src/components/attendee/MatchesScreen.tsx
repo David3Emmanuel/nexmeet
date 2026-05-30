@@ -129,6 +129,14 @@ export default function MatchesScreen({ you, matches, count, onOpen, onMap, onRe
         <p style={{ textAlign: "center", marginTop: 14, fontSize: 12.5, color: "var(--ink-3)" }}>
           <Icon name="chat" size={13} /> We&apos;ve emailed these to you too — they unlock at match time.
         </p>
+
+        {onRestart && (
+          <div style={{ textAlign: "center", marginTop: 24, marginBottom: 12 }}>
+            <button onClick={onRestart} style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-3)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 4 }}>
+              Register another person
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
