@@ -367,7 +367,6 @@ function StepReview({ details, themeObj, themeId, onTheme, questions, setQuestio
               </div>
             ))}
           </div>
-          <button type="button" className="btn btn-ghost btn-sm btn-full" onClick={addQ} style={{ marginTop: 12 }}>+ Add your own question</button>
         </div>
       </div>
     </div>
