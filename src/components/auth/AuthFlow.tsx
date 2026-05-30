@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { sendOtp, verifyOtp, setSession, isNewUser } from '@/lib/auth';
 import Logo from '@/components/ui/Logo';
 import Icon from '@/components/ui/Icon';
 
@@ -20,7 +19,7 @@ export default function AuthFlow() {
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
   const [emailErr, setEmailErr] = useState('');
-  const [digits, setDigits] = useState(['', '', '', '', '']);
+  const [digits, setDigits] = useState(['', '', '', '', '', '']);
   const [otpErr, setOtpErr] = useState('');
   const [loading, setLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
@@ -32,9 +31,7 @@ export default function AuthFlow() {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const urlEmail = params.get('email');
-      if (urlEmail) {
-        setEmail(urlEmail);
-      }
+      if (urlEmail) setEmail(urlEmail);
     }
   }, []);
 
@@ -51,29 +48,37 @@ export default function AuthFlow() {
     if (!validateEmail(email)) { setEmailErr('Enter a valid email address'); return; }
     setEmailErr('');
     setLoading(true);
-    await new Promise(r => setTimeout(r, 800)); // simulate latency
-    sendOtp(email);
-    setLoading(false);
-    setStep('otp');
-    setResendTimer(60);
-    setTimeout(() => inputRefs.current[0]?.focus(), 80);
+    try {
+      const res = await fetch('/api/auth/otp/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) throw new Error();
+      setStep('otp');
+      setResendTimer(60);
+      setTimeout(() => inputRefs.current[0]?.focus(), 80);
+    } catch {
+      setEmailErr('Failed to send code. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDigitChange = (i: number, val: string) => {
-    // Handle paste
     if (val.length > 1) {
-      const clean = val.replace(/\D/g, '').slice(0, 5);
+      const clean = val.replace(/\D/g, '').slice(0, 6);
       const next = [...digits];
-      clean.split('').forEach((c, idx) => { if (idx < 5) next[idx] = c; });
+      clean.split('').forEach((c, idx) => { if (idx < 6) next[idx] = c; });
       setDigits(next);
-      inputRefs.current[Math.min(clean.length, 4)]?.focus();
+      inputRefs.current[Math.min(clean.length, 5)]?.focus();
       return;
     }
     const clean = val.replace(/\D/g, '');
     const next = [...digits];
     next[i] = clean;
     setDigits(next);
-    if (clean && i < 4) inputRefs.current[i + 1]?.focus();
+    if (clean && i < 5) inputRefs.current[i + 1]?.focus();
   };
 
   const handleDigitKey = (i: number, e: React.KeyboardEvent) => {
@@ -85,23 +90,34 @@ export default function AuthFlow() {
   const handleOtpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = digits.join('');
-    if (code.length < 5) { setOtpErr('Enter the full 5-digit code'); return; }
+    if (code.length < 6) { setOtpErr('Enter the full 6-digit code'); return; }
     setLoading(true);
-    await new Promise(r => setTimeout(r, 600));
-    if (!verifyOtp(email, code)) {
-      setOtpErr('That code doesn\'t match. Double-check or request a new one.');
+    try {
+      const res = await fetch('/api/auth/otp/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code }),
+      });
+      if (!res.ok) {
+        setOtpErr('That code doesn\'t match. Double-check or request a new one.');
+        return;
+      }
+      router.push('/organizer');
+    } catch {
+      setOtpErr('Something went wrong. Please try again.');
+    } finally {
       setLoading(false);
-      return;
     }
-    const firstTime = isNewUser();
-    setSession(email);
-    router.push(firstTime ? '/organizer?onboarding=true' : '/organizer');
   };
 
-  const resend = () => {
-    sendOtp(email);
+  const resend = async () => {
+    await fetch('/api/auth/otp/request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
     setResendTimer(60);
-    setDigits(['', '', '', '', '']);
+    setDigits(['', '', '', '', '', '']);
     setOtpErr('');
     setTimeout(() => inputRefs.current[0]?.focus(), 80);
   };
@@ -143,7 +159,7 @@ export default function AuthFlow() {
                 <div className="eyebrow" style={{ marginBottom: 8 }}>Welcome to NexMeet</div>
                 <h1 className="display" style={{ fontSize: 28, marginBottom: 8 }}>Sign in to get started</h1>
                 <p className="lead" style={{ fontSize: 15, marginBottom: 28 }}>
-                  Enter your email and we'll send you a 5-digit code. No passwords, ever.
+                  Enter your email and we'll send you a 6-digit code. No passwords, ever.
                 </p>
 
                 <form onSubmit={handleEmailSubmit}>
@@ -182,7 +198,7 @@ export default function AuthFlow() {
             ) : (
               <motion.div key="otp" variants={slide} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.22 }}>
                 <button
-                  onClick={() => { setStep('email'); setDigits(['', '', '', '', '']); setOtpErr(''); }}
+                  onClick={() => { setStep('email'); setDigits(['', '', '', '', '', '']); setOtpErr(''); }}
                   style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--ink-3)', fontSize: 13.5, fontWeight: 700, marginBottom: 20 }}
                 >
                   <Icon name="back" size={16} /> Back
@@ -191,7 +207,7 @@ export default function AuthFlow() {
                 <div className="eyebrow" style={{ marginBottom: 8 }}>Check your inbox</div>
                 <h1 className="display" style={{ fontSize: 26, marginBottom: 8 }}>Enter your code</h1>
                 <p className="lead" style={{ fontSize: 14.5, marginBottom: 28 }}>
-                  We sent a 5-digit code to <strong style={{ color: 'var(--ink)' }}>{email}</strong>. It expires in 10 minutes.
+                  We sent a 6-digit code to <strong style={{ color: 'var(--ink)' }}>{email}</strong>. It expires in 15 minutes.
                 </p>
 
                 <form onSubmit={handleOtpSubmit}>
@@ -203,14 +219,14 @@ export default function AuthFlow() {
                         ref={el => { inputRefs.current[i] = el; }}
                         type="text"
                         inputMode="numeric"
-                        maxLength={5}
+                        maxLength={6}
                         value={d}
                         onChange={e => handleDigitChange(i, e.target.value)}
                         onKeyDown={e => handleDigitKey(i, e)}
                         style={{
-                          width: 54, height: 62,
+                          width: 48, height: 58,
                           textAlign: 'center',
-                          fontSize: 26, fontWeight: 800,
+                          fontSize: 24, fontWeight: 800,
                           fontFamily: 'var(--font-display)',
                           background: 'var(--paper)',
                           border: `2px solid ${d ? 'var(--accent)' : 'var(--card-edge)'}`,
