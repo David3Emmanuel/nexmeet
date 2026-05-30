@@ -4,11 +4,10 @@ import { useState } from 'react';
 import Avatar from '@/components/ui/Avatar';
 import Icon from '@/components/ui/Icon';
 import Logo from '@/components/ui/Logo';
-import { EVENT, Match, YouProfile } from '@/lib/data';
 
 interface ShareSheetProps {
-  match: Match;
-  you: YouProfile;
+  match: { name: string; color?: string; reason?: string; answers?: Record<string, string> };
+  you: { name: string };
   onClose: () => void;
 }
 
@@ -28,16 +27,16 @@ export default function ShareSheet({ match, you, onClose }: ShareSheetProps) {
         <div className="eyebrow">Share this match</div>
         <h3 className="display" style={{ fontSize: 24, marginTop: 8, marginBottom: 16 }}>Screenshot-ready</h3>
 
-        <div className="mcard" style={{ background: match.accent, gap: 14 }}>
+        <div className="mcard" style={{ background: match.color || 'var(--accent)', gap: 14 }}>
           <div className="row between" style={{ alignItems: "center" }}>
             <Logo size={16} dark />
-            <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase", color: "rgba(255,255,255,.75)" }}>{EVENT.name}</span>
+            <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: ".12em", textTransform: "uppercase", color: "rgba(255,255,255,.75)" }}>NexMeet</span>
           </div>
           <div className="row gap12" style={{ alignItems: "center" }}>
             <Avatar name={match.name} color="rgba(255,255,255,.18)" size={44} />
             <div>
               <div className="display" style={{ fontSize: 18, color: "#fff" }}>{you.name.split(" ")[0]} × {match.name.split(" ")[0]}</div>
-              <div style={{ fontSize: 12.5, color: "rgba(255,255,255,.8)" }}>{match.role}</div>
+              <div style={{ fontSize: 12.5, color: "rgba(255,255,255,.8)" }}>{match.answers?.role || 'Attendee'}</div>
             </div>
           </div>
           <div className="quote" style={{ fontSize: 17 }}>&ldquo;{match.reason}&rdquo;</div>

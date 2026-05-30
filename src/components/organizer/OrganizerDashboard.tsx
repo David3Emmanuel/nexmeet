@@ -7,7 +7,7 @@ import Avatar from '@/components/ui/Avatar';
 import Icon from '@/components/ui/Icon';
 import Logo from '@/components/ui/Logo';
 import QrCode from '@/components/ui/QrCode';
-import { AV, EVENT, GOALS, SEED } from '@/lib/data';
+import { AV } from '@/lib/data';
 
 interface OrganizerDashboardProps {
   eventId: string;
@@ -103,9 +103,9 @@ function ConnectionGraph({ attendees = [], matches = [] }: { attendees: any[]; m
 export default function OrganizerDashboard({ eventId, onExit, onNewEvent, onHome }: OrganizerDashboardProps) {
   const [eventData, setEventData] = useState<any>(null);
   const [attendees, setAttendees] = useState<any[]>([]);
+  const [matchPairs, setMatchPairs] = useState<any[]>([]);
   const [count, setCount] = useState(0);
   const [pulse, setPulse] = useState<string | null>(null);
-  const [feed, setFeed] = useState<{ name: string; role: string; t: number }[]>([]);
   const [isMatching, setIsMatching] = useState(false);
   const [matchesMade, setMatchesMade] = useState(0);
 
@@ -139,8 +139,9 @@ export default function OrganizerDashboard({ eventId, onExit, onNewEvent, onHome
     fetch(`/api/events/${eventId}/matches`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
-        if (data && data.total !== undefined) {
-           setMatchesMade(data.total);
+        if (data && data.matches) {
+          setMatchPairs(data.matches);
+          setMatchesMade(data.total ?? data.matches.length);
         }
       })
       .catch(console.error);
@@ -152,24 +153,24 @@ export default function OrganizerDashboard({ eventId, onExit, onNewEvent, onHome
 
   const triggerMatch = async () => {
     if (count < 2) {
-      toast.error('Not enough attendees', { description: 'At least 2 people need to join before matching.' });
+      toast.error('Not enough attendees', { description: 'At least 2 people need to join before curating connections.' });
       return;
     }
     setIsMatching(true);
-    const toastId = toast.loading('Running AI matching engine...');
+    const toastId = toast.loading('Running AI curation engine...');
     try {
       const res = await fetch(`/api/events/${eventId}/match`, { method: 'POST' });
       const data = await res.json();
       if (data.matched) {
         setEventData({ ...eventData, matched: true });
         setMatchesMade(data.matched);
-        toast.success(`Matched ${data.matched} pairs!`, { id: toastId, description: 'The connections are now live.' });
+        toast.success(`Curated ${data.matched} connections!`, { id: toastId, description: 'The connections are now live.' });
       } else {
-        toast.info('No new matches', { id: toastId, description: 'Everyone is already matched.' });
+        toast.info('No new connections', { id: toastId, description: 'Everyone has been connected.' });
       }
     } catch (e) {
       console.error(e);
-      toast.error('Matching failed', { id: toastId, description: 'Please try again.' });
+      toast.error('Curation failed', { id: toastId, description: 'Please try again.' });
     } finally {
       setIsMatching(false);
     }
@@ -178,10 +179,9 @@ export default function OrganizerDashboard({ eventId, onExit, onNewEvent, onHome
   // Compute stats from real data
   const respondents = attendees.filter(a => a.responses && Object.keys(a.responses).length > 0).length;
   const completion = count > 0 ? Math.round((respondents / count) * 100) : 100;
-  
-  // Real attendee feed
+
+  // Real attendee feed sorted by most recent
   const sortedAttendees = [...attendees].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
-  const displayFeed = sortedAttendees.length > 0 ? sortedAttendees : [];
 
   return (
     <div className="org screen-enter">
@@ -211,11 +211,11 @@ export default function OrganizerDashboard({ eventId, onExit, onNewEvent, onHome
                 style={{ background: 'var(--accent)', color: '#fff', border: 'none', marginLeft: 8 }}
               >
                 <Icon name="spark" size={16} />
-                <span style={{ marginLeft: 6 }}>{isMatching ? 'Matching...' : 'Match Now'}</span>
+                <span style={{ marginLeft: 6 }}>{isMatching ? 'Curating...' : 'Find Connections'}</span>
               </button>
             ) : (
               <span style={{ padding: "6px 12px", borderRadius: 999, background: "color-mix(in srgb, var(--accent) 15%, transparent)", color: "var(--accent)", fontSize: 13, fontWeight: 700, marginLeft: 8 }}>
-                Matched
+                Curated
               </span>
             )}
           </div>
@@ -236,9 +236,9 @@ export default function OrganizerDashboard({ eventId, onExit, onNewEvent, onHome
 
         <div className="dashboard-stats-grid">
           <Stat label="Attendees in room" value={count} accent="var(--coral)" icon="users" big live />
-          <Stat label="Matches generated" value={matchesMade} accent="var(--plum)" icon="spark" />
+          <Stat label="Connections curated" value={matchesMade} accent="var(--plum)" icon="spark" />
           <Stat label="Form completion" value={count > 0 ? `${completion}%` : "—"} accent="var(--forest)" icon="check" />
-          <Stat label="Avg. time to match" value={count > 1 ? "1.2s" : "—"} accent="var(--sky)" icon="bolt" />
+          <Stat label="Avg. curation time" value={count > 1 ? "1.2s" : "—"} accent="var(--sky)" icon="bolt" />
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1.55fr 1fr", gap: 20, alignItems: "start" }} className="org-grid">
@@ -247,8 +247,8 @@ export default function OrganizerDashboard({ eventId, onExit, onNewEvent, onHome
               <h3 className="display" style={{ fontSize: 21 }}>Connection map</h3>
               <span style={{ fontSize: 13, color: "var(--ink-3)", fontWeight: 600 }}>{matchesMade} links</span>
             </div>
-            <p className="lead" style={{ fontSize: 13.5, marginBottom: 8 }}>Every line is a match NexMeet suggested between two attendees.</p>
-            <ConnectionGraph nodes={Math.min(count, 16)} />
+            <p className="lead" style={{ fontSize: 13.5, marginBottom: 8 }}>Every line is a connection NexMeet curated between two attendees.</p>
+            <ConnectionGraph attendees={attendees} matches={matchPairs} />
           </div>
 
           <div className="col gap20">
@@ -266,16 +266,16 @@ export default function OrganizerDashboard({ eventId, onExit, onNewEvent, onHome
             <div className="panel" style={{ padding: 22 }}>
               <h3 className="display" style={{ fontSize: 18, marginBottom: 14 }}>Just joined</h3>
               <div className="col gap8">
-                {displayFeed.slice(0, 5).map((a, i) => (
+                {sortedAttendees.slice(0, 5).map((a, i) => (
                   <div key={a.id} className="row gap12" style={{ alignItems: "center", padding: "6px 0", borderBottom: i < 4 ? "1px solid var(--line)" : "none" }}>
                     <Avatar name={a.name} color={AV[i % AV.length]} size={36} />
                     <div className="grow" style={{ minWidth: 0 }}>
                       <div style={{ fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.name}</div>
-                      <div style={{ fontSize: 12.5, color: "var(--ink-3)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.responses?.role || 'Attendee'}</div>
+                      <div style={{ fontSize: 12.5, color: "var(--ink-3)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.responses?.role || a.email || 'Attendee'}</div>
                     </div>
                   </div>
                 ))}
-                {displayFeed.length === 0 && (
+                {sortedAttendees.length === 0 && (
                   <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--ink-3)' }}>Waiting for attendees...</div>
                 )}
               </div>

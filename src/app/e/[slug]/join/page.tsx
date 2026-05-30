@@ -27,16 +27,46 @@ export default function JoinPage({
   const [met, setMet] = useState<Record<string, boolean>>({})
   const [locGranted, setLocGranted] = useState(false)
   const [authToken, setAuthToken] = useState<string | null>(null)
-  
-  // Track if we are currently polling to avoid overlapping requests
+
+  // Real event data from DB
+  const [eventData, setEventData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
   const pollingRef = useRef(false)
 
+  // Fetch event (form_fields + theme_config) on mount
   useEffect(() => {
-    // Check if we already have a token
+    fetch(`/api/events/${slug}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d) setEventData(d)
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [slug])
+
+  // Apply the event theme to CSS vars on this page
+  useEffect(() => {
+    if (!eventData?.theme_config) return
+    const tc = typeof eventData.theme_config === 'string'
+      ? JSON.parse(eventData.theme_config)
+      : eventData.theme_config
+
+    const root = document.documentElement
+    if (tc.background) root.style.setProperty('--paper', tc.background)
+    if (tc.foreground) {
+      root.style.setProperty('--ink', tc.foreground)
+      root.style.setProperty('--ink-2', `color-mix(in srgb, ${tc.foreground} 75%, ${tc.background || '#fff'})`)
+      root.style.setProperty('--ink-3', `color-mix(in srgb, ${tc.foreground} 45%, ${tc.background || '#fff'})`)
+    }
+    if (tc.accent) root.style.setProperty('--accent', tc.accent)
+    if (tc.fontFamily) root.style.setProperty('font-family', tc.fontFamily)
+  }, [eventData])
+
+  useEffect(() => {
     const token = localStorage.getItem(`nexmeet:token:${slug}`)
     if (token) {
       setAuthToken(token)
-      // Check if already matched
       checkMatchStatus(token)
     }
   }, [slug])
@@ -58,7 +88,6 @@ export default function JoinPage({
       const res = await fetch(`/api/events/${slug}/matches?auth_token=${token}`)
       const data = await res.json()
       if (data.matches) {
-        // Map DB matches to frontend format
         const mappedMatches = data.matches.map((m: any, i: number) => ({
           id: m.id,
           name: m.matched_name,
@@ -74,10 +103,10 @@ export default function JoinPage({
     } catch (e) {}
   }
 
-  // Polling effect while on finding screen
+  // Poll while on finding screen
   useEffect(() => {
     if (screen !== 'finding' || !authToken) return
-    
+
     const id = setInterval(async () => {
       if (pollingRef.current) return
       pollingRef.current = true
@@ -93,21 +122,21 @@ export default function JoinPage({
         pollingRef.current = false
       }
     }, 3000)
-    
+
     return () => clearInterval(id)
   }, [screen, authToken, slug])
 
   const submit = async (profile: any) => {
     setYou(profile)
     setScreen('finding')
-    
+
     try {
       const res = await fetch(`/api/events/${slug}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: profile.name,
-          email: profile.email || `${profile.name.replace(/\s/g, '').toLowerCase()}${Math.random().toString().substring(2,6)}@example.com`,
+          email: profile.email || `${profile.name.replace(/\s/g, '').toLowerCase()}${Math.random().toString().substring(2, 6)}@example.com`,
           responses: profile.answers,
         }),
       })
@@ -120,6 +149,27 @@ export default function JoinPage({
       console.error(e)
     }
   }
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--paper)' }}>
+        <div style={{ textAlign: 'center', color: 'var(--ink-3)' }}>Loading event...</div>
+      </div>
+    )
+  }
+
+  // Parse form_fields from DB — DB stores { name, label, type, required }
+  // FormScreen expects { id, label, type, required }
+  const rawFields = eventData?.form_fields
+  const parsedRaw: any[] = Array.isArray(rawFields)
+    ? rawFields
+    : (typeof rawFields === 'string' ? (() => { try { return JSON.parse(rawFields); } catch { return []; } })() : [])
+  const formFields = parsedRaw.map((f: any) => ({
+    id: f.id || f.name || f.label?.toLowerCase().replace(/[^a-z0-9]/g, '') || String(Math.random()),
+    label: f.label || f.question || f.name || '',
+    type: f.type || 'text',
+    required: !!f.required,
+  }))
 
   return (
     <div
@@ -145,12 +195,19 @@ export default function JoinPage({
         {screen === 'form' && (
           <FormScreen
             initial={you}
+            formFields={formFields}
             onBack={() => router.push(`/e/${slug}`)}
             onSubmit={submit}
           />
         )}
         {screen === 'finding' && (
-          <FindingScreen you={you} onDone={() => { /* now driven by polling */ }} />
+          <FindingScreen you={you} onDone={() => { /* driven by polling */ }} onRestart={() => {
+            localStorage.removeItem(`nexmeet:token:${slug}`);
+            setAuthToken(null);
+            setYou({ name: '', email: '', responses: {} });
+            setMatches([]);
+            setScreen('form');
+          }} />
         )}
         {(screen === 'matches' || screen === 'map') && (
           <div
@@ -180,7 +237,13 @@ export default function JoinPage({
                   }}
                   onMap={() => setScreen('map')}
                   onRefresh={() => fetchMatches(authToken!)}
-                  onRestart={() => router.push(`/e/${slug}`)}
+                  onRestart={() => {
+                    localStorage.removeItem(`nexmeet:token:${slug}`);
+                    setAuthToken(null);
+                    setYou({ name: '', email: '', responses: {} });
+                    setMatches([]);
+                    setScreen('form');
+                  }}
                 />
               )}
               {screen === 'map' && (

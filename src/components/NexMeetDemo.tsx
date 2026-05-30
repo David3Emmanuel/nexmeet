@@ -40,7 +40,7 @@ export default function NexMeetDemo() {
   const [screen, setScreen] = useState<AttendeeScreen>("cover");
   const [you, setYou] = useState<YouProfile>(DEMO_YOU);
   const [matches, setMatches] = useState<Match[]>([]);
-  const [active, setActive] = useState<Match | null>(null);
+  const [active, setActive] = useState<any>(null);
   const [share, setShare] = useState(false);
   const [met, setMet] = useState<Record<string, boolean>>({});
   const [locGranted, setLocGranted] = useState(false);
@@ -78,7 +78,7 @@ export default function NexMeetDemo() {
   const attendeeView = (
     <PhoneShell>
       {screen === "cover" && <CoverScreen onStart={() => setScreen("form")} onOrganizer={() => setRole("organizer")} />}
-      {screen === "form" && <FormScreen initial={you} onBack={() => setScreen("cover")} onSubmit={submit} />}
+      {screen === "form" && <FormScreen initial={you} formFields={[]} onBack={() => setScreen("cover")} onSubmit={submit} />}
       {screen === "finding" && <FindingScreen you={you} onDone={() => setScreen("matches")} />}
       {(screen === "matches" || screen === "map") && (
         <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
@@ -137,7 +137,7 @@ export default function NexMeetDemo() {
                 onLaunch={d => { setCreatedEvent({ name: d.title || EVENT.name, type: d.type }); setOrgScreen("dashboard"); }}
               />
             : <OrganizerDashboard
-                event={createdEvent}
+                eventId={createdEvent.name}
                 onExit={() => setRole("attendee")}
                 onHome={() => setOrgScreen("home")}
                 onNewEvent={() => setOrgScreen("create")}

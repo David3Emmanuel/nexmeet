@@ -452,8 +452,12 @@ export default function OrganizerCreate({ defaults, applyTheme, onHome, onExit, 
   });
   const [theme, setTheme] = useState("ember");
   const [generatedTheme, setGeneratedTheme] = useState<any>(null);
-  const [questions, setQuestions] = useState<Question[]>(baseQuestions("hackathon"));
-  const [timing, setTiming] = useState<Timing>({ mode: "during", when: "" });
+  const [questions, setQuestions] = useState<Question[]>([
+    { id: 'name', q: 'Full name', locked: true, on: true },
+    { id: 'email', q: 'Email address', locked: true, on: true },
+    { id: 'phone', q: 'Phone number', locked: true, on: true },
+  ]);
+  const [timing, setTiming] = useState<Timing>({ mode: 'during', when: '' });
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -493,19 +497,29 @@ export default function OrganizerCreate({ defaults, applyTheme, onHome, onExit, 
           applyTheme(THEMES.find(x => x.id === picked));
         }
         
-        const newQs: Question[] = baseQuestions(details.type);
+        // Start fresh: only the 3 locked basics + whatever AI returned (max 5)
+        const lockedQs: Question[] = [
+          { id: 'name', q: 'Full name', locked: true, on: true },
+          { id: 'email', q: 'Email address', locked: true, on: true },
+          { id: 'phone', q: 'Phone number', locked: true, on: true },
+        ];
         if (qsData.form_fields && Array.isArray(qsData.form_fields)) {
-           qsData.form_fields.forEach((f: any) => {
-             newQs.push({ id: (f.id || f.question).toLowerCase().replace(/[^a-z0-9]/g, ''), q: f.question, on: true, custom: true });
-           });
+          qsData.form_fields.slice(0, 5).forEach((f: any) => {
+            const qid = (f.id || f.question || '').toLowerCase().replace(/[^a-z0-9]/g, '') || `q${Date.now()}`;
+            lockedQs.push({ id: qid, q: f.question || f.label, on: true, custom: true });
+          });
         }
-        setQuestions(newQs);
+        setQuestions(lockedQs);
         setStep(2);
       } catch (err) {
         console.error(err);
-        const picked = TYPE_THEME[details.type] || "ember";
+        const picked = TYPE_THEME[details.type] || 'ember';
         setTheme(picked);
-        setQuestions(baseQuestions(details.type));
+        setQuestions([
+          { id: 'name', q: 'Full name', locked: true, on: true },
+          { id: 'email', q: 'Email address', locked: true, on: true },
+          { id: 'phone', q: 'Phone number', locked: true, on: true },
+        ]);
         applyTheme(THEMES.find(x => x.id === picked));
         setStep(2);
       }
