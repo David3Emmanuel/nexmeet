@@ -16,7 +16,7 @@ The backend is a **Next.js app router** with API routes under `src/app/api/`, de
 ### Key Architectural Decisions
 
 - **Database over WebSockets:** Instead of persistent WebSocket connections for location tracking, the architecture uses **HTTP short polling**. The client `PUT`s its location and receives match data in a single stateless request-response cycle.
-- **Storage Offloading:** The backend never handles image binary data. The frontend uploads flyers directly to Cloudinary via the `ImageDrop` component (`src/components/ui/ImageDrop.tsx`), which POSTs to the Cloudinary unsigned upload API using `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` and `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET`. Only the resulting `secure_url` string is stored in the database.
+- **Storage Offloading:** Image uploads go through `POST /api/media/upload`, which uses the Cloudinary Node.js SDK (`CLOUDINARY_API_KEY` + `CLOUDINARY_API_SECRET`) server-side. The `ImageDrop` component (`src/components/ui/ImageDrop.tsx`) POSTs the file to this route; only the returned `secure_url` is stored in the database. Files are restricted to JPEG/PNG/WebP/GIF, max 5 MB.
 - **AI-Powered Matching:** Matching is triggered on-demand (via organizer action or scheduled job) and uses an LLM to pair attendees based on their form responses.
 
 ## Entities & Database Schema
@@ -168,57 +168,92 @@ Each event has a fixed set of base fields followed by AI-generated questions:
 
 ---
 
+### AI (Protected — requires session cookie)
+
+#### `POST /api/ai/theme`
+
+- **Auth:** Session cookie (organizer).
+- **Purpose:** Uses Gemini to extract a `GeneratedTheme` from the event flyer image.
+- **Payload:** `{ image_url: string, title?: string, about?: string }`
+- **Response:** `{ theme_config: GeneratedTheme }` — full 7-field theme (see `src/lib/types.ts`)
+
+#### `POST /api/ai/questions`
+
+- **Auth:** Session cookie (organizer).
+- **Purpose:** Uses Gemini to generate up to 5 event-specific form questions.
+- **Payload:** `{ title: string, about: string, count?: number }` — `count` defaults to 5
+- **Response:** `{ form_fields: FormQuestion[] }`
+
+---
+
 ### Organizer System (Protected — requires session cookie)
 
-#### `POST /api/events/generate/theme`
+#### `GET /api/events`
 
 - **Auth:** Session cookie (organizer).
-- **Purpose:** Uses an LLM to generate a `theme_config` from the event title and description.
-- **Payload:** `{ title: string, about: string, image_url: string }`
-- **Response:** `{ theme_config: { foreground, background, accent, fontFamily } }`
-
-#### `POST /api/events/generate/questions`
-
-- **Auth:** Session cookie (organizer).
-- **Purpose:** Uses an LLM to generate up to 5 event-specific form questions.
-- **Payload:** `{ title: string, about: string }`
-- **Response:** `{ form_fields: FormField[] }` — `text`/`textarea` types only, excludes base fields
+- **Purpose:** Lists all events owned by the authenticated organizer.
+- **Response:** `{ events: EventSummary[] }`
 
 #### `POST /api/events`
 
 - **Auth:** Session cookie (organizer).
-- **Purpose:** Creates the event record once the organizer approves or edits the AI-generated layout.
-- **Payload:** `{ title, about, image_url, form_fields, theme_config, match_times }`
-- **Response:** `{ event_id: "UUID" }`
+- **Purpose:** Creates an event. Upserts the organizer row on first call.
+- **Payload:** `{ title, about?, image_url?, form_fields?, theme_config?, match_times? }`
+- **Response:** `{ event_id: "UUID" }` — 201
+
+#### `GET /api/events/:id`
+
+- **Auth:** Public.
+- **Purpose:** Fetches event data to render the attendee registration form.
+- **Response:** `{ title, about, image_url, form_fields, theme_config }`
+
+#### `PATCH /api/events/:id`
+
+- **Auth:** Session cookie (organizer) — must own the event.
+- **Purpose:** Partially updates any event fields.
+- **Payload:** Any subset of `{ title, about, image_url, form_fields, theme_config, match_times }`
+- **Response:** `{ success: true }`
+
+#### `DELETE /api/events/:id`
+
+- **Auth:** Session cookie (organizer) — must own the event.
+- **Purpose:** Deletes the event and cascades to attendees and matches.
+- **Response:** `{ success: true }`
+
+#### `GET /api/events/:id/attendees`
+
+- **Auth:** Session cookie (organizer) — must own the event.
+- **Purpose:** Returns all registered attendees with their responses and last-known location.
+- **Response:** `{ attendees: Attendee[], total: number }`
+
+#### `GET /api/events/:id/matches`
+
+- **Auth:** Session cookie (organizer) — must own the event.
+- **Purpose:** Returns all generated match pairs with attendee names.
+- **Response:** `{ matches: [{ id, attendee_a_id, attendee_a_name, attendee_b_id, attendee_b_name }], total: number }`
 
 #### `POST /api/events/:id/match`
 
 - **Auth:** Session cookie (organizer) — must own the event.
-- **Purpose:** Triggers AI-powered matchmaking for the event. Can also be invoked automatically at a scheduled match time.
+- **Purpose:** Triggers AI-powered matchmaking. Clears old matches, runs Gemini, persists pairs, sets `matched = true`, and sends notification emails (fire-and-forget).
 - **Payload:** None
-- **Action:** Queries all attendees and their responses, uses an LLM to pair them, populates the `Matches` table, sets `Events.matched = true`, and sends match notification emails.
+- **Response:** `{ matched: number }` — count of unique pairs generated
 
 ---
 
 ### Attendee System (Public & Signed-URL Access)
 
-#### `GET /api/events/:id`
-
-- **Auth:** Public.
-- **Purpose:** Fetches event data to render the registration form on the client.
-- **Response:** `{ title, about, image_url, form_fields, theme_config }`
-
 #### `POST /api/events/:id/register`
 
 - **Auth:** Public.
-- **Purpose:** Processes attendee registration.
-- **Payload:** `{ name, email, phone, responses: { ... } }`
-- **Response:** `{ success: true }` _(Triggers a confirmation email with the signed URL ticket)._
+- **Purpose:** Registers an attendee and sends a confirmation email containing their signed ticket URL.
+- **Payload:** `{ name, email, phone?, responses?: { ... } }`
+- **Response:** `{ success: true }`
 
 #### `PUT /api/attendees/location`
 
 - **Auth:** `X-Attendee-Token: <ATTENDEE_AUTH_TOKEN>` header.
-- **Purpose:** Dual-purpose polling endpoint for the live map. The client sends coordinates and receives match locations in return.
+- **Purpose:** Dual-purpose polling endpoint for the live map. Updates the attendee's coordinates and returns their matched attendees' current positions.
 - **Payload:** `{ lat: float, lng: float }`
 - **Response:**
   ```json
@@ -228,3 +263,30 @@ Each event has a fixed set of base fields followed by AI-generated questions:
     ]
   }
   ```
+
+---
+
+### Scheduled Jobs
+
+#### `GET /api/cron/match`
+
+- **Auth:** `Authorization: Bearer <CRON_SECRET>` header.
+- **Purpose:** Scans for unmatched events with a `match_time` that has passed and triggers matching for each. Designed to be called every minute by an external cron service (e.g. cron-job.org).
+- **Response:** `{ triggered: number }` — count of events processed.
+- **Failure handling:** Per-event errors are logged and skipped; other events still run.
+
+**Match time lifecycle:**
+1. **Before** — organizer sets one or more `match_times` when creating/editing the event. Attendees register normally.
+2. **At match time** — cron fires `GET /api/cron/match`, which calls `triggerMatch()` from `src/lib/match.ts` for each due event.
+3. **After** — `matched` flag is set to `true`; attendees receive email with their match card link (`/e/:id?ticket=...`). Organizer can also trigger manually via `POST /api/events/:id/match`.
+
+---
+
+### Media
+
+#### `POST /api/media/upload`
+
+- **Auth:** Public (called from `ImageDrop` component).
+- **Purpose:** Receives an image file, validates it (JPEG/PNG/WebP/GIF, max 5 MB), and uploads it to Cloudinary via the Node.js SDK.
+- **Payload:** `multipart/form-data` with a `file` field.
+- **Response:** `{ url: string }` — Cloudinary `secure_url`

@@ -8,6 +8,7 @@ const spec = {
     securitySchemes: {
       sessionCookie: { type: 'apiKey', in: 'cookie', name: 'nexmeet_session' },
       attendeeToken: { type: 'apiKey', in: 'header', name: 'X-Attendee-Token' },
+      cronSecret: { type: 'http', scheme: 'bearer', description: 'CRON_SECRET env var' },
     },
     schemas: {
       ThemeConfig: {
@@ -351,6 +352,20 @@ const spec = {
           },
           400: { description: 'lat or lng missing' },
           401: { description: 'Invalid or missing attendee token' },
+        },
+      },
+    },
+
+    // ── Cron ─────────────────────────────────────────────────────────────────
+    '/cron/match': {
+      get: {
+        tags: ['Cron'],
+        summary: 'Trigger scheduled matchmaking for all due events',
+        description: 'Called every minute by an external cron service (e.g. cron-job.org). Finds unmatched events whose match_time has passed and runs AI matching for each.',
+        security: [{ cronSecret: [] }],
+        responses: {
+          200: { description: 'Ran successfully', content: { 'application/json': { schema: { type: 'object', properties: { triggered: { type: 'integer', description: 'Number of events matched this run' } } } } } },
+          401: { description: 'Missing or invalid CRON_SECRET' },
         },
       },
     },
